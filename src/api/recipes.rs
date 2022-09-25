@@ -2,7 +2,7 @@ use async_graphql::*;
 
 use sea_orm::DatabaseConnection;
 
-use crate::authorization::{recipes_policy::RecipesPolicy, Authorization, DefaultActions};
+use crate::authorization::{authorized, recipes_policy::RecipesPolicy, DefaultActions};
 use crate::recipes::RecipeInput;
 
 #[derive(Default)]
@@ -24,9 +24,7 @@ impl RecipesQueries {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        if !RecipesPolicy.authorized(DefaultActions::List, user, None, db) {
-            return Err(Error::new("Unauthorized"));
-        }
+        authorized(RecipesPolicy, DefaultActions::List, user, None, db)?;
 
         let search = match search {
             Some(s) => Some(s.split_whitespace().map(|s| s.to_string()).collect()),
@@ -47,9 +45,7 @@ impl RecipesQueries {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        if !RecipesPolicy.authorized(DefaultActions::List, user, None, db) {
-            return Err(Error::new("Unauthorized"));
-        }
+        authorized(RecipesPolicy, DefaultActions::List, user, None, db)?;
 
         let search = match search {
             Some(s) => Some(s.split_whitespace().map(|s| s.to_string()).collect()),
@@ -67,9 +63,7 @@ impl RecipesQueries {
 
         let recipe = crate::recipes::get_recipe_by_id(id, db).await?;
 
-        if !RecipesPolicy.authorized(DefaultActions::Get, user, recipe.as_ref(), db) {
-            return Err(Error::new("Unauthorized"));
-        }
+        authorized(RecipesPolicy, DefaultActions::Get, user, recipe.as_ref(), db)?;
 
         Ok(recipe)
     }
@@ -83,9 +77,7 @@ impl RecipesMutations {
 
         let recipe = crate::recipes::get_recipe_by_id(id, db).await?;
 
-        if !RecipesPolicy.authorized(DefaultActions::Update, user, recipe.as_ref(), db) {
-            return Err(Error::new("Unauthorized"));
-        }
+        authorized(RecipesPolicy, DefaultActions::Update, user, recipe.as_ref(), db)?;
 
         crate::recipes::update_recipe(id, values, db)
             .await
@@ -96,9 +88,7 @@ impl RecipesMutations {
         let user = ctx.data::<entity::users::Model>()?;
         let db = ctx.data::<DatabaseConnection>()?;
 
-        if !RecipesPolicy.authorized(DefaultActions::Create, Some(user), None, db) {
-            return Err(Error::new("Unauthorized"));
-        }
+        authorized(RecipesPolicy, DefaultActions::Create, Some(user), None, db)?;
 
         crate::recipes::create_recipe(recipe, user.id, db)
             .await
@@ -111,9 +101,7 @@ impl RecipesMutations {
 
         let recipe = crate::recipes::get_recipe_by_id(id, db).await?;
 
-        if !RecipesPolicy.authorized(DefaultActions::Delete, user, recipe.as_ref(), db) {
-            return Err(Error::new("Unauthorized"));
-        }
+        authorized(RecipesPolicy, DefaultActions::Delete, user, recipe.as_ref(), db)?;
 
         crate::recipes::delete_recipe(id, db).await.map_err(|e| e.into())
     }
