@@ -15,6 +15,7 @@ use migration::{Migrator, MigratorTrait};
 use dotenv::dotenv;
 
 mod api;
+mod authorization;
 mod ingredients;
 mod recipes;
 mod tags;

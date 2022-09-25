@@ -2,6 +2,7 @@ use async_graphql::*;
 
 use sea_orm::DatabaseConnection;
 
+use crate::authorization::{recipes_policy::RecipesPolicy, Authorization, DefaultActions};
 use crate::recipes::RecipeInput;
 
 #[derive(Default)]
@@ -23,6 +24,10 @@ impl RecipesQueries {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
+        if !RecipesPolicy.authorized(DefaultActions::List, user, None, db) {
+            return Err(Error::new("Unauthorized"));
+        }
+
         let search = match search {
             Some(s) => Some(s.split_whitespace().map(|s| s.to_string()).collect()),
             None => None,
@@ -39,7 +44,12 @@ impl RecipesQueries {
         search: Option<String>,
         tags: Option<Vec<String>>,
     ) -> Result<usize> {
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
+
+        if !RecipesPolicy.authorized(DefaultActions::List, user, None, db) {
+            return Err(Error::new("Unauthorized"));
+        }
 
         let search = match search {
             Some(s) => Some(s.split_whitespace().map(|s| s.to_string()).collect()),
@@ -52,19 +62,32 @@ impl RecipesQueries {
     }
 
     async fn recipe(&self, ctx: &Context<'_>, id: i64) -> Result<Option<entity::recipes::Model>> {
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        crate::recipes::get_recipe_by_id(id, db).await.map_err(|e| e.into())
+        let recipe = crate::recipes::get_recipe_by_id(id, db).await?;
+
+        if !RecipesPolicy.authorized(DefaultActions::Get, user, recipe.as_ref(), db) {
+            return Err(Error::new("Unauthorized"));
+        }
+
+        Ok(recipe)
     }
 }
 
 #[Object]
 impl RecipesMutations {
-    async fn update_recipe(&self, ctx: &Context<'_>, id: i64, recipe: RecipeInput) -> Result<entity::recipes::Model> {
-        ctx.data::<entity::users::Model>().map_err(|_| "Not logged in")?;
+    async fn update_recipe(&self, ctx: &Context<'_>, id: i64, values: RecipeInput) -> Result<entity::recipes::Model> {
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        crate::recipes::update_recipe(id, recipe, db)
+        let recipe = crate::recipes::get_recipe_by_id(id, db).await?;
+
+        if !RecipesPolicy.authorized(DefaultActions::Update, user, recipe.as_ref(), db) {
+            return Err(Error::new("Unauthorized"));
+        }
+
+        crate::recipes::update_recipe(id, values, db)
             .await
             .map_err(|e| e.into())
     }
@@ -72,14 +95,25 @@ impl RecipesMutations {
     async fn create_recipe(&self, ctx: &Context<'_>, recipe: RecipeInput) -> Result<entity::recipes::Model> {
         let user = ctx.data::<entity::users::Model>()?;
         let db = ctx.data::<DatabaseConnection>()?;
+
+        if !RecipesPolicy.authorized(DefaultActions::Create, Some(user), None, db) {
+            return Err(Error::new("Unauthorized"));
+        }
+
         crate::recipes::create_recipe(recipe, user.id, db)
             .await
             .map_err(|e| e.into())
     }
 
     async fn delete_recipe(&self, ctx: &Context<'_>, id: i64) -> Result<bool> {
-        ctx.data::<entity::users::Model>().map_err(|_| "Not logged in")?;
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
+
+        let recipe = crate::recipes::get_recipe_by_id(id, db).await?;
+
+        if !RecipesPolicy.authorized(DefaultActions::Delete, user, recipe.as_ref(), db) {
+            return Err(Error::new("Unauthorized"));
+        }
 
         crate::recipes::delete_recipe(id, db).await.map_err(|e| e.into())
     }
