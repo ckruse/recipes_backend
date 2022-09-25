@@ -1,0 +1,26 @@
+[package]
+name = "entity"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+itertools = "0.10"
+
+[dependencies.async-graphql]
+version = "4.0"
+features = ["chrono", "log", "dataloader"]
+
+[dependencies.sea-orm]
+version = "0.9"
+features = [
+  "debug-print",
+  "runtime-actix-native-tls",
+  "sqlx-postgres",
+  "with-chrono",
+]
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
