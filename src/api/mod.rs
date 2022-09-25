@@ -5,6 +5,7 @@ mod ingredients;
 mod recipes;
 mod session;
 mod tags;
+mod users;
 
 #[derive(async_graphql::MergedObject, Default)]
 pub struct MutationRoot(

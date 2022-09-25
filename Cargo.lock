@@ -2097,6 +2097,7 @@ dependencies = [
  "env_logger",
  "jsonwebtoken",
  "migration",
+ "rand_core",
  "sea-orm",
  "serde",
 ]

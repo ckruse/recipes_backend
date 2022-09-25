@@ -5,6 +5,7 @@ use entity::users::Model as UserModel;
 
 pub mod ingredients_policy;
 pub mod recipes_policy;
+pub mod users_policy;
 
 pub enum DefaultActions {
     List,
