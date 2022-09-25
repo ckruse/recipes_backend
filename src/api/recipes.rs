@@ -20,6 +20,7 @@ impl RecipesQueries {
         limit: u64,
         offset: u64,
     ) -> Result<Vec<entity::recipes::Model>> {
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
         let search = match search {
@@ -69,9 +70,11 @@ impl RecipesMutations {
     }
 
     async fn create_recipe(&self, ctx: &Context<'_>, recipe: RecipeInput) -> Result<entity::recipes::Model> {
-        ctx.data::<entity::users::Model>().map_err(|_| "Not logged in")?;
+        let user = ctx.data::<entity::users::Model>()?;
         let db = ctx.data::<DatabaseConnection>()?;
-        crate::recipes::create_recipe(recipe, db).await.map_err(|e| e.into())
+        crate::recipes::create_recipe(recipe, user.id, db)
+            .await
+            .map_err(|e| e.into())
     }
 
     async fn delete_recipe(&self, ctx: &Context<'_>, id: i64) -> Result<bool> {

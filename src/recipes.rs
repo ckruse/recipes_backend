@@ -99,6 +99,7 @@ pub struct RecipeInput {
 
 pub async fn create_recipe(
     recipe_values: RecipeInput,
+    owner_id: i64,
     db: &DatabaseConnection,
 ) -> Result<entity::recipes::Model, DbErr> {
     let now = Utc::now().naive_utc();
@@ -108,6 +109,7 @@ pub async fn create_recipe(
         description: Set(recipe_values.description),
         inserted_at: Set(now),
         updated_at: Set(now),
+        owner_id: Set(owner_id),
         ..Default::default()
     };
 

@@ -18,6 +18,7 @@ use crate::{recipes_tags, tags};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
+    pub owner_id: i64,
     pub name: String,
     #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
@@ -31,6 +32,14 @@ pub enum Relation {
     Steps,
     #[sea_orm(has_many = "super::recipes_tags::Entity")]
     RecipesTags,
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::OwnerId",
+        to = "super::users::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
+    Owner,
 }
 
 impl Related<super::steps::Entity> for Entity {
@@ -42,6 +51,12 @@ impl Related<super::steps::Entity> for Entity {
 impl Related<super::recipes_tags::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::RecipesTags.def()
+    }
+}
+
+impl Related<super::users::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Owner.def()
     }
 }
 

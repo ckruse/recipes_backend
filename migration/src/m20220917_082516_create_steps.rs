@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::m20220101_000001_create_recipes::Recipes;
+use crate::m20220916_135004_create_recipes::Recipes;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -53,9 +53,7 @@ impl MigrationTrait for Migration {
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager
-            .drop_table(Table::drop().table(Steps::Table).to_owned())
-            .await
+        manager.drop_table(Table::drop().table(Steps::Table).to_owned()).await
     }
 }
 

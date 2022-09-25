@@ -1,6 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::{m20220101_000001_create_recipes::Recipes, m20220916_135604_create_tags::Tags};
+use crate::{m20220916_135004_create_recipes::Recipes, m20220916_135604_create_tags::Tags};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -13,11 +13,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(RecipesTags::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(RecipesTags::RecipeId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(RecipesTags::RecipeId).big_integer().not_null())
                     .col(ColumnDef::new(RecipesTags::TagId).big_integer().not_null())
                     .to_owned(),
             )
