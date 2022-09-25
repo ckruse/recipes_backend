@@ -3,6 +3,7 @@ use sea_orm::DatabaseConnection;
 
 use entity::users::Model as UserModel;
 
+pub mod ingredients_policy;
 pub mod recipes_policy;
 
 pub enum DefaultActions {

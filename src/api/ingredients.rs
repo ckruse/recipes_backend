@@ -1,6 +1,7 @@
 use async_graphql::*;
 use sea_orm::DatabaseConnection;
 
+use crate::authorization::{authorized, ingredients_policy::IngredientsPolicy, DefaultActions};
 use crate::ingredients::IngredientInput;
 
 #[derive(Default)]
@@ -18,24 +19,35 @@ impl IngredientsQueries {
         offset: u64,
         search: Option<String>,
     ) -> Result<Vec<entity::ingredients::Model>> {
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
+
+        authorized(IngredientsPolicy, DefaultActions::List, user, None, db)?;
+
         crate::ingredients::list_ingredients(limit, offset, search, db)
             .await
             .map_err(|e| e.into())
     }
 
     pub async fn count_ingredients(&self, ctx: &Context<'_>, search: Option<String>) -> Result<usize> {
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
+
+        authorized(IngredientsPolicy, DefaultActions::List, user, None, db)?;
+
         crate::ingredients::count_ingredients(search, db)
             .await
             .map_err(|e| e.into())
     }
 
     async fn ingredient(&self, ctx: &Context<'_>, id: i64) -> Result<Option<entity::ingredients::Model>> {
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
-        crate::ingredients::get_ingredient_by_id(id, db)
-            .await
-            .map_err(|e| e.into())
+
+        let ingredient = crate::ingredients::get_ingredient_by_id(id, db).await?;
+        authorized(IngredientsPolicy, DefaultActions::Get, user, ingredient.as_ref(), db)?;
+
+        Ok(ingredient)
     }
 }
 
@@ -46,9 +58,10 @@ impl IngredientsMutations {
         ctx: &Context<'_>,
         ingredient: IngredientInput,
     ) -> Result<entity::ingredients::Model> {
-        ctx.data::<entity::users::Model>().map_err(|_| "Not logged in")?;
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
+        authorized(IngredientsPolicy, DefaultActions::Create, user, None, db)?;
         crate::ingredients::create_ingredient(ingredient, db)
             .await
             .map_err(|e| e.into())
@@ -58,19 +71,24 @@ impl IngredientsMutations {
         &self,
         ctx: &Context<'_>,
         id: i64,
-        ingredient: IngredientInput,
+        values: IngredientInput,
     ) -> Result<entity::ingredients::Model> {
-        ctx.data::<entity::users::Model>().map_err(|_| "Not logged in")?;
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        crate::ingredients::update_ingredient(id, ingredient, db)
+        let ingredient = crate::ingredients::get_ingredient_by_id(id, db).await?;
+        authorized(IngredientsPolicy, DefaultActions::Update, user, ingredient.as_ref(), db)?;
+
+        crate::ingredients::update_ingredient(id, values, db)
             .await
             .map_err(|e| e.into())
     }
 
     async fn delete_ingredient(&self, ctx: &Context<'_>, id: i64) -> Result<bool> {
-        ctx.data::<entity::users::Model>().map_err(|_| "Not logged in")?;
+        let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
+
+        authorized(IngredientsPolicy, DefaultActions::Delete, user, None, db)?;
 
         crate::ingredients::delete_ingredient(id, db)
             .await
