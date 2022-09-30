@@ -1,14 +1,11 @@
 use argon2::password_hash::{PasswordHash, PasswordVerifier, SaltString};
 use argon2::{Argon2, PasswordHasher};
-use rand_core::OsRng;
-
 use async_graphql::*;
-
+use entity::users::{self, Role};
+use rand_core::OsRng;
 use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::{Set, Unchanged};
 use sea_orm::{DatabaseConnection, Order, QueryOrder, QuerySelect};
-
-use entity::users::{self, Role};
 
 use crate::token::create_jwt;
 

@@ -1,9 +1,8 @@
+use entity::recipes::Model as RecipeModel;
+use entity::users::{Model as UserModel, Role};
 use sea_orm::DatabaseConnection;
 
 use super::{Authorization, DefaultActions};
-
-use entity::recipes::Model as RecipeModel;
-use entity::users::{Model as UserModel, Role};
 
 pub struct RecipesPolicy;
 

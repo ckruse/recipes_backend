@@ -1,8 +1,6 @@
 use sea_orm_migration::prelude::*;
 
-use crate::{
-    m20220917_082200_create_ingredients::Ingredients, m20220917_082516_create_steps::Steps,
-};
+use crate::{m20220917_082200_create_ingredients::Ingredients, m20220917_082516_create_steps::Steps};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -22,33 +20,13 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(StepsIngridients::StepId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(StepsIngridients::IngridientId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(StepsIngridients::StepId).big_integer().not_null())
+                    .col(ColumnDef::new(StepsIngridients::IngridientId).big_integer().not_null())
                     .col(ColumnDef::new(StepsIngridients::Amount).double().not_null())
                     .col(ColumnDef::new(StepsIngridients::Unit).string().not_null())
-                    .col(
-                        ColumnDef::new(StepsIngridients::Annotation)
-                            .string()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(StepsIngridients::InsertedAt)
-                            .timestamp()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(StepsIngridients::UpdatedAt)
-                            .timestamp()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(StepsIngridients::Annotation).string().not_null())
+                    .col(ColumnDef::new(StepsIngridients::InsertedAt).timestamp().not_null())
+                    .col(ColumnDef::new(StepsIngridients::UpdatedAt).timestamp().not_null())
                     .to_owned(),
             )
             .await?;

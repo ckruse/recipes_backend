@@ -1,5 +1,4 @@
 use async_graphql::*;
-
 use sea_orm::DatabaseConnection;
 
 use crate::{

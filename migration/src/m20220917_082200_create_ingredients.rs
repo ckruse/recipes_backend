@@ -24,16 +24,8 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Ingredients::Fat).float().not_null())
                     .col(ColumnDef::new(Ingredients::Proteins).float().not_null())
                     .col(ColumnDef::new(Ingredients::Alc).float().not_null())
-                    .col(
-                        ColumnDef::new(Ingredients::InsertedAt)
-                            .timestamp()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(Ingredients::UpdatedAt)
-                            .timestamp()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(Ingredients::InsertedAt).timestamp().not_null())
+                    .col(ColumnDef::new(Ingredients::UpdatedAt).timestamp().not_null())
                     .to_owned(),
             )
             .await

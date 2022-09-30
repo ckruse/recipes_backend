@@ -1,9 +1,8 @@
+use entity::ingredients::Model as IngredientModel;
+use entity::users::{Model as UserModel, Role};
 use sea_orm::DatabaseConnection;
 
 use super::{Authorization, DefaultActions};
-
-use entity::ingredients::Model as IngredientModel;
-use entity::users::{Model as UserModel, Role};
 
 pub struct IngredientsPolicy;
 

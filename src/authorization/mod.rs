@@ -1,7 +1,6 @@
 use async_graphql::Error;
-use sea_orm::DatabaseConnection;
-
 use entity::users::Model as UserModel;
+use sea_orm::DatabaseConnection;
 
 pub mod ingredients_policy;
 pub mod recipes_policy;

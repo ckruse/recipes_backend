@@ -1,8 +1,7 @@
+use entity::users::{Model as UserModel, Role};
 use sea_orm::DatabaseConnection;
 
 use super::{Authorization, DefaultActions};
-
-use entity::users::{Model as UserModel, Role};
 
 pub struct UsersPolicy;
 
