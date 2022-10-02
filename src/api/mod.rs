@@ -13,6 +13,7 @@ pub struct MutationRoot(
     recipes::RecipesMutations,
     tags::TagsMutations,
     ingredients::IngredientsMutations,
+    users::UsersMutations,
 );
 
 #[derive(async_graphql::MergedObject, Default)]
@@ -20,6 +21,7 @@ pub struct QueryRoot(
     recipes::RecipesQueries,
     tags::TagsQueries,
     ingredients::IngredientsQueries,
+    users::UsersQueries,
 );
 
 pub type RecipesSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
