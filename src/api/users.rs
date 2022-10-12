@@ -62,14 +62,20 @@ impl UsersMutations {
         crate::users::create_user(user, db).await.map_err(|e| e.into())
     }
 
-    async fn update_user(&self, ctx: &Context<'_>, id: i64, values: UserInput) -> Result<entity::users::Model> {
+    async fn update_user(&self, ctx: &Context<'_>, id: i64, user: UserInput) -> Result<entity::users::Model> {
         let current_user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        let user = crate::users::get_user(id, db).await?;
-        authorized(UsersPolicy, DefaultActions::Update, current_user, user.as_ref(), db)?;
+        let existing_user = crate::users::get_user(id, db).await?;
+        authorized(
+            UsersPolicy,
+            DefaultActions::Update,
+            current_user,
+            existing_user.as_ref(),
+            db,
+        )?;
 
-        crate::users::update_user(id, values, db).await.map_err(|e| e.into())
+        crate::users::update_user(id, user, db).await.map_err(|e| e.into())
     }
 
     async fn delete_user(&self, ctx: &Context<'_>, id: i64) -> Result<bool> {

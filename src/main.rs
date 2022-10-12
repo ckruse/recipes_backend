@@ -5,6 +5,7 @@ use actix_web::{self};
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
 use async_graphql::http::GraphiQLSource;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use cookie::{CookieJar, Key};
 #[cfg(debug_assertions)]
 use dotenv::dotenv;
 use migration::{Migrator, MigratorTrait};
@@ -13,9 +14,9 @@ use sea_orm::DatabaseConnection;
 mod api;
 mod authorization;
 mod ingredients;
+mod jar;
 mod recipes;
 mod tags;
-mod token;
 mod users;
 
 async fn index(
@@ -24,13 +25,15 @@ async fn index(
     http_req: HttpRequest,
     db: web::Data<DatabaseConnection>,
 ) -> GraphQLResponse {
-    if let Some(hdr) = http_req.headers().get("Authorization") {
-        if let Ok(auth) = hdr.to_str() {
-            if auth.starts_with("Bearer ") {
-                let token = auth[7..].to_string();
-                if let Ok(user) = token::decode_jwt(&token, &db).await {
-                    return schema.execute(req.into_inner().data(user)).await.into();
-                }
+    if let Some(token) = http_req.cookie("recipes_auth") {
+        let master_key = env::var("COOKIE_KEY").expect("env variable COOKIE_KEY not set");
+        let key = Key::derive_from(master_key.as_bytes());
+        let jar = CookieJar::new();
+        let priv_jar = jar.private(&key);
+
+        if let Some(value) = priv_jar.decrypt(token) {
+            if let Some(user) = users::get_user_by_id(value.value().parse().unwrap(), &db).await {
+                return schema.execute(req.into_inner().data(user)).await.into();
             }
         }
     }

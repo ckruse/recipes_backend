@@ -1,35 +1,33 @@
 use async_graphql::*;
 use sea_orm::DatabaseConnection;
 
-use crate::{token::create_jwt, users::authenticate_user};
+use crate::jar::get_auth_cookie;
+use crate::users::authenticate_user;
 
 #[derive(Default)]
 pub struct SessionMutations;
 
-#[derive(SimpleObject)]
-struct LoginPayload {
-    token: String,
-    user: entity::users::Model,
-}
-
 #[Object]
 impl SessionMutations {
-    async fn login(&self, ctx: &Context<'_>, email: String, password: String) -> Result<LoginPayload> {
+    async fn login(&self, ctx: &Context<'_>, email: String, password: String) -> Result<entity::users::Model> {
         let db = ctx.data::<DatabaseConnection>()?;
 
-        if let Some((token, user)) = authenticate_user(email, password, db).await {
-            Ok(LoginPayload { token, user })
+        if let Some(user) = authenticate_user(email, password, db).await {
+            let cookie = get_auth_cookie(&user);
+            ctx.insert_http_header(actix_web::http::header::SET_COOKIE, cookie);
+
+            Ok(user)
         } else {
             Err("Invalid credentials".into())
         }
     }
 
-    async fn refresh(&self, ctx: &Context<'_>) -> Result<LoginPayload> {
+    async fn refresh(&self, ctx: &Context<'_>) -> Result<entity::users::Model> {
         if let Some(user) = ctx.data_opt::<entity::users::Model>() {
-            Ok(LoginPayload {
-                token: create_jwt(&user)?,
-                user: user.clone(),
-            })
+            let cookie = get_auth_cookie(&user);
+            ctx.insert_http_header(actix_web::http::header::SET_COOKIE, cookie);
+
+            Ok(user.clone())
         } else {
             Err("Invalid credentials".into())
         }

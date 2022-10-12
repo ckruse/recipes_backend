@@ -9,14 +9,17 @@ impl Authorization<DefaultActions, UserModel> for UsersPolicy {
     fn authorized(
         &self,
         action: DefaultActions,
-        resource: Option<&UserModel>,
         user: Option<&UserModel>,
+        resource: Option<&UserModel>,
         _db: &DatabaseConnection,
     ) -> bool {
         match action {
             DefaultActions::List => true,
+
             DefaultActions::Create => true,
+
             DefaultActions::Get => true,
+
             DefaultActions::Update => {
                 if let Some(user) = user {
                     if user.role == Role::Root {
@@ -32,6 +35,7 @@ impl Authorization<DefaultActions, UserModel> for UsersPolicy {
 
                 false
             }
+
             DefaultActions::Delete => {
                 if let Some(user) = user {
                     if user.role == Role::Root {

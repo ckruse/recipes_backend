@@ -41,3 +41,6 @@ features = ["derive"]
 [dependencies.chrono]
 version = "0.4"
 features = ["std", "serde"]
+
+[dependencies.cookie]
+features = ["secure", "percent-encode"]

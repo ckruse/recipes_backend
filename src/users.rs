@@ -7,14 +7,13 @@ use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::{Set, Unchanged};
 use sea_orm::{DatabaseConnection, Order, QueryOrder, QuerySelect};
 
-use crate::token::create_jwt;
-
 #[derive(SimpleObject, InputObject)]
 pub struct UserInput {
     pub email: String,
     pub password: Option<String>,
     pub name: Option<String>,
     pub role: Role,
+    pub active: bool,
 }
 
 pub async fn get_user_by_email(email: String, db: &DatabaseConnection) -> Option<users::Model> {
@@ -35,15 +34,11 @@ pub async fn get_user_by_id(id: i64, db: &DatabaseConnection) -> Option<users::M
     }
 }
 
-pub async fn authenticate_user(
-    email: String,
-    password: String,
-    db: &DatabaseConnection,
-) -> Option<(String, users::Model)> {
+pub async fn authenticate_user(email: String, password: String, db: &DatabaseConnection) -> Option<users::Model> {
     match get_user_by_email(email, db).await {
         Some(user) => {
             if verify_password(&user.encrypted_password, &password) {
-                Some((create_jwt(&user).ok()?, user))
+                Some(user)
             } else {
                 None
             }
