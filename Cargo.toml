@@ -26,7 +26,7 @@ version = "4.0"
 features = ["chrono", "log", "dataloader"]
 
 [dependencies.sea-orm]
-version = "0.9"
+version = "^0.10"
 features = [
   "debug-print",
   "runtime-actix-native-tls",
@@ -43,4 +43,5 @@ version = "0.4"
 features = ["std", "serde"]
 
 [dependencies.cookie]
+version = "0.16"
 features = ["secure", "percent-encode"]
