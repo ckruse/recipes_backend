@@ -1,3 +1,4 @@
+pub mod ingredient_units;
 pub mod ingredients;
 pub mod recipes;
 pub mod recipes_tags;
