@@ -29,7 +29,19 @@ pub type RecipesSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 pub fn create_schema(db: DatabaseConnection) -> RecipesSchema {
     Schema::build(QueryRoot::default(), MutationRoot::default(), EmptySubscription)
         .data(DataLoader::new(
-            entity::recipes::TagsLoader { conn: db.clone() },
+            entity::recipes::RecipesLoader { conn: db.clone() },
+            actix_web::rt::spawn,
+        ))
+        .data(DataLoader::new(
+            entity::steps::StepsLoader { conn: db.clone() },
+            actix_web::rt::spawn,
+        ))
+        .data(DataLoader::new(
+            entity::steps_ingridients::StepIngredientLoader { conn: db.clone() },
+            actix_web::rt::spawn,
+        ))
+        .data(DataLoader::new(
+            entity::ingredients::IngredientLoader { conn: db.clone() },
             actix_web::rt::spawn,
         ))
         .data(db)
