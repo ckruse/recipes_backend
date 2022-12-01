@@ -64,6 +64,8 @@ async fn main() -> std::io::Result<()> {
 
     let schema = api::create_schema(conn.clone());
 
+    println!("Listening on http://{}", addrs);
+
     HttpServer::new(move || {
         let cors = actix_cors::Cors::permissive();
 
