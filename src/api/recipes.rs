@@ -40,7 +40,7 @@ impl RecipesQueries {
         ctx: &Context<'_>,
         search: Option<String>,
         tags: Option<Vec<String>>,
-    ) -> Result<usize> {
+    ) -> Result<u64> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 

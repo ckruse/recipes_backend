@@ -50,7 +50,7 @@ pub async fn count_recipes(
     search: Option<Vec<String>>,
     tags: Option<Vec<String>>,
     db: &DatabaseConnection,
-) -> Result<usize, DbErr> {
+) -> Result<u64, DbErr> {
     let mut query = entity::recipes::Entity::find();
 
     if let Some(search) = search {
@@ -108,7 +108,7 @@ pub async fn create_recipe(
         description: Set(recipe_values.description),
         inserted_at: Set(now),
         updated_at: Set(now),
-        owner_id: Set(owner_id),
+        owner_id: Set(Some(owner_id)),
         ..Default::default()
     };
 
@@ -132,7 +132,7 @@ pub async fn create_recipe(
         })
     })
     .await
-    .map_err(|_e| DbErr::Query("Transaction failed".to_string()))
+    .map_err(|_e| DbErr::Query(sea_orm::RuntimeErr::Internal("Transaction failed".to_string())))
 }
 
 pub async fn update_recipe(
@@ -185,7 +185,7 @@ pub async fn update_recipe(
         })
     })
     .await
-    .map_err(|_e| DbErr::Query("Transaction failed".to_string()))
+    .map_err(|_e| DbErr::Query(sea_orm::RuntimeErr::Internal("Transaction failed".to_string())))
 }
 
 pub async fn delete_recipe(id: i64, db: &DatabaseConnection) -> Result<bool, DbErr> {

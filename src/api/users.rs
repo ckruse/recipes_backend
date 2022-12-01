@@ -31,7 +31,7 @@ impl UsersQueries {
             .map_err(|e| e.into())
     }
 
-    async fn count_users(&self, ctx: &Context<'_>, search: Option<String>) -> Result<usize> {
+    async fn count_users(&self, ctx: &Context<'_>, search: Option<String>) -> Result<u64> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 

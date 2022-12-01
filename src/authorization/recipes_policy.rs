@@ -25,7 +25,7 @@ impl Authorization<DefaultActions, RecipeModel> for RecipesPolicy {
                     }
 
                     if let Some(recipe) = resource {
-                        if recipe.owner_id == user.id {
+                        if recipe.owner_id == Some(user.id) {
                             return true;
                         }
                     }
@@ -40,7 +40,7 @@ impl Authorization<DefaultActions, RecipeModel> for RecipesPolicy {
                     }
 
                     if let Some(recipe) = resource {
-                        if recipe.owner_id == user.id {
+                        if recipe.owner_id == Some(user.id) {
                             return true;
                         }
                     }

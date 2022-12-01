@@ -8,10 +8,10 @@ use sea_orm::{DatabaseConnection, QuerySelect};
 pub struct IngredientInput {
     name: String,
     reference: entity::ingredients::Reference,
-    carbs: f32,
-    fat: f32,
-    proteins: f32,
-    alc: f32,
+    carbs: f64,
+    fat: f64,
+    proteins: f64,
+    alc: f64,
 }
 
 pub async fn list_ingredients(
@@ -30,7 +30,7 @@ pub async fn list_ingredients(
     Ok(ingredients)
 }
 
-pub async fn count_ingredients(search: Option<String>, db: &DatabaseConnection) -> Result<usize, DbErr> {
+pub async fn count_ingredients(search: Option<String>, db: &DatabaseConnection) -> Result<u64, DbErr> {
     let mut query = entity::ingredients::Entity::find();
 
     if let Some(search) = search {

@@ -29,7 +29,7 @@ impl IngredientsQueries {
             .map_err(|e| e.into())
     }
 
-    pub async fn count_ingredients(&self, ctx: &Context<'_>, search: Option<String>) -> Result<usize> {
+    pub async fn count_ingredients(&self, ctx: &Context<'_>, search: Option<String>) -> Result<u64> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 

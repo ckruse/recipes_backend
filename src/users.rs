@@ -80,7 +80,7 @@ pub async fn list_users(
         .await
 }
 
-pub async fn count_users(search: Option<String>, db: &DatabaseConnection) -> Result<usize, DbErr> {
+pub async fn count_users(search: Option<String>, db: &DatabaseConnection) -> Result<u64, DbErr> {
     let mut query = users::Entity::find();
 
     if let Some(search) = search {
