@@ -20,6 +20,7 @@ argon2 = { version = "0.4", features = ["password-hash"] }
 rand_core = { version = "0.6", features = ["std"] }
 anyhow = "1.0"
 actix-cors = "0.6"
+log = "0.4"
 
 [dependencies.async-graphql]
 version = "4.0"

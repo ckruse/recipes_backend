@@ -1,7 +1,6 @@
 use std::env;
 
 use actix_web::web::Data;
-use actix_web::{self};
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
 use async_graphql::http::GraphiQLSource;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
@@ -64,7 +63,7 @@ async fn main() -> std::io::Result<()> {
 
     let schema = api::create_schema(conn.clone());
 
-    println!("Listening on http://{}", addrs);
+    log::info!("Listening on http://{}", addrs);
 
     HttpServer::new(move || {
         let cors = actix_cors::Cors::permissive();
