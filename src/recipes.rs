@@ -1,7 +1,8 @@
 use async_graphql::*;
 use chrono::Utc;
+use migration::{Alias, DynIden};
 use sea_orm::entity::prelude::*;
-use sea_orm::sea_query::{Expr, Query};
+use sea_orm::sea_query::{Expr, Func, Query};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{Condition, DatabaseConnection, DbErr, JoinType, QuerySelect, TransactionTrait, Unchanged};
 
@@ -18,24 +19,32 @@ pub async fn list_recipes(
         let mut cond = Condition::all();
 
         for s in search {
-            cond = cond.add(entity::recipes::Column::Name.like(&format!("%{}%", s)));
+            cond = cond.add(
+                Expr::expr(Func::lower(Expr::col((
+                    entity::recipes::Entity,
+                    entity::recipes::Column::Name,
+                ))))
+                .like(format!("%{}%", s.to_lowercase())),
+            );
         }
 
         query = query.filter(cond);
     }
 
     if let Some(tags) = tags {
+        let tags_search_tbl: DynIden = sea_orm::sea_query::SeaRc::new(Alias::new("tags_search"));
+
         query = query
             .join(JoinType::InnerJoin, entity::recipes::Relation::RecipesTags.def())
             .join(JoinType::InnerJoin, entity::recipes_tags::Relation::Tags.def())
             .filter(
                 Condition::any()
                     .add(
-                        entity::tags::Column::Tag.in_subquery(
+                        Expr::col((entity::tags::Entity, entity::tags::Column::Name)).in_subquery(
                             Query::select()
-                                .column(entity::tags::Column::Tag)
-                                .from(entity::tags::Entity)
-                                .and_where(Expr::col(entity::tags::Column::Tag).is_in(tags))
+                                .column(entity::tags::Column::Name)
+                                .from_as(entity::tags::Entity, tags_search_tbl.clone())
+                                .and_where(Expr::col((tags_search_tbl, entity::tags::Column::Name)).is_in(tags))
                                 .to_owned(),
                         ),
                     )
@@ -57,24 +66,32 @@ pub async fn count_recipes(
         let mut cond = Condition::all();
 
         for s in search {
-            cond = cond.add(entity::recipes::Column::Name.like(&format!("%{}%", s)));
+            cond = cond.add(
+                Expr::expr(Func::lower(Expr::col((
+                    entity::recipes::Entity,
+                    entity::recipes::Column::Name,
+                ))))
+                .like(format!("%{}%", s.to_lowercase())),
+            );
         }
 
         query = query.filter(cond);
     }
 
     if let Some(tags) = tags {
+        let tags_search_tbl: DynIden = sea_orm::sea_query::SeaRc::new(Alias::new("tags_search"));
+
         query = query
             .join(JoinType::InnerJoin, entity::recipes::Relation::RecipesTags.def())
             .join(JoinType::InnerJoin, entity::recipes_tags::Relation::Tags.def())
             .filter(
                 Condition::any()
                     .add(
-                        entity::tags::Column::Tag.in_subquery(
+                        Expr::col((entity::tags::Entity, entity::tags::Column::Name)).in_subquery(
                             Query::select()
-                                .column(entity::tags::Column::Tag)
-                                .from(entity::tags::Entity)
-                                .and_where(Expr::col(entity::tags::Column::Tag).is_in(tags))
+                                .column(entity::tags::Column::Name)
+                                .from_as(entity::tags::Entity, tags_search_tbl.clone())
+                                .and_where(Expr::col((tags_search_tbl, entity::tags::Column::Name)).is_in(tags))
                                 .to_owned(),
                         ),
                     )
