@@ -72,6 +72,10 @@ impl Model {
 
         Ok(units.unwrap_or(vec![]))
     }
+
+    async fn calories(&self) -> f64 {
+        self.alc * 7.1 + self.carbs * 4.1 + self.fat * 9.3 + self.proteins * 4.1
+    }
 }
 
 #[async_trait::async_trait]
