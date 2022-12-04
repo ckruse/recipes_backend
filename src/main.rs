@@ -15,6 +15,7 @@ mod authorization;
 mod ingredients;
 mod jar;
 mod recipes;
+mod steps;
 mod tags;
 mod users;
 

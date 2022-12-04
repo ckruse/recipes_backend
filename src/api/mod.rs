@@ -4,6 +4,7 @@ use sea_orm::DatabaseConnection;
 mod ingredients;
 mod recipes;
 mod session;
+mod steps;
 mod tags;
 mod users;
 
@@ -14,6 +15,7 @@ pub struct MutationRoot(
     tags::TagsMutations,
     ingredients::IngredientsMutations,
     users::UsersMutations,
+    steps::StepsMutations,
 );
 
 #[derive(async_graphql::MergedObject, Default)]
@@ -22,6 +24,7 @@ pub struct QueryRoot(
     tags::TagsQueries,
     ingredients::IngredientsQueries,
     users::UsersQueries,
+    steps::StepsQueries,
 );
 
 pub type RecipesSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
