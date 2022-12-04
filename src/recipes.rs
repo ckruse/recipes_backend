@@ -106,7 +106,7 @@ pub async fn get_recipe_by_id(id: i64, db: &DatabaseConnection) -> Result<Option
     entity::recipes::Entity::find_by_id(id).one(db).await
 }
 
-#[derive(SimpleObject, InputObject)]
+#[derive(SimpleObject, InputObject, Debug)]
 pub struct RecipeInput {
     name: String,
     description: Option<String>,

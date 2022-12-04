@@ -70,15 +70,21 @@ impl RecipesQueries {
 
 #[Object]
 impl RecipesMutations {
-    async fn update_recipe(&self, ctx: &Context<'_>, id: i64, values: RecipeInput) -> Result<entity::recipes::Model> {
+    async fn update_recipe(&self, ctx: &Context<'_>, id: i64, recipe: RecipeInput) -> Result<entity::recipes::Model> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        let recipe = crate::recipes::get_recipe_by_id(id, db).await?;
+        let existing_recipe = crate::recipes::get_recipe_by_id(id, db).await?;
 
-        authorized(RecipesPolicy, DefaultActions::Update, user, recipe.as_ref(), db)?;
+        authorized(
+            RecipesPolicy,
+            DefaultActions::Update,
+            user,
+            existing_recipe.as_ref(),
+            db,
+        )?;
 
-        crate::recipes::update_recipe(id, values, db)
+        crate::recipes::update_recipe(id, recipe, db)
             .await
             .map_err(|e| e.into())
     }
