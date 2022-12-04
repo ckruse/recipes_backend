@@ -106,6 +106,11 @@ impl Model {
             original: image.clone(),
         })
     }
+
+    async fn calories(&self, _ctx: &Context<'_>) -> Result<u32, DbErr> {
+        // TODO: calculate calories
+        Ok(100)
+    }
 }
 
 pub struct RecipesLoader {
