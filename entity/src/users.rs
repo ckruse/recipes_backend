@@ -15,13 +15,14 @@ pub enum Role {
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize, SimpleObject)]
 #[sea_orm(table_name = "users")]
-#[graphql(concrete(name = "User", params()))]
+#[graphql(complex, concrete(name = "User", params()))]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
     pub email: String,
     pub active: bool,
     pub encrypted_password: Option<String>,
+    #[graphql(skip)]
     pub avatar: Option<String>,
     pub name: Option<String>,
     pub role: Role,
@@ -42,3 +43,24 @@ impl Related<super::recipes::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
+#[graphql(concrete(name = "UserAvatar", params()))]
+pub struct AvatarVariants {
+    pub thumb: String,
+    pub original: String,
+}
+
+#[ComplexObject]
+impl Model {
+    pub async fn avatar(&self) -> Option<AvatarVariants> {
+        if let Some(avatar) = &self.avatar {
+            Some(AvatarVariants {
+                thumb: format!("{}/thumb", avatar),
+                original: avatar.clone(),
+            })
+        } else {
+            None
+        }
+    }
+}
