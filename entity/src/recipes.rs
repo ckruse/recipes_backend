@@ -24,6 +24,7 @@ pub struct Model {
     pub owner_id: Option<i64>,
     pub inserted_at: DateTime,
     pub updated_at: DateTime,
+    #[graphql(skip)]
     pub image: Option<String>,
 }
 
@@ -77,6 +78,13 @@ struct TagId(pub i64);
 #[derive(Clone, Eq, PartialEq, Hash)]
 struct StepId(i64);
 
+#[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
+pub struct RecipeImage {
+    pub thumb: String,
+    pub medium: String,
+    pub original: String,
+}
+
 #[ComplexObject]
 impl Model {
     async fn tags(&self, ctx: &Context<'_>) -> Result<Vec<tags::Model>> {
@@ -89,6 +97,14 @@ impl Model {
         let loader = ctx.data_unchecked::<DataLoader<RecipesLoader>>();
         let steps: Option<Vec<steps::Model>> = loader.load_one(StepId(self.id)).await?;
         steps.ok_or_else(|| "Not found".into())
+    }
+
+    async fn image(&self, _ctx: &Context<'_>) -> Option<RecipeImage> {
+        self.image.as_ref().map(|image| RecipeImage {
+            thumb: image.clone(),
+            medium: image.clone(),
+            original: image.clone(),
+        })
     }
 }
 
