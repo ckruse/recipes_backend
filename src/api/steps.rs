@@ -69,29 +69,26 @@ impl StepsMutations {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        let existing_step = crate::steps::get_step_by_id(id, db).await?;
-        if let Some(existing_step) = existing_step {
-            let recipe = recipes::get_recipe_by_id(existing_step.recipe_id, db).await?;
-            authorized(RecipesPolicy, DefaultActions::Update, user, recipe.as_ref(), db)?;
+        let existing_step = crate::steps::get_step_by_id(id, db)
+            .await?
+            .ok_or_else(|| ServerError::new("Step not found", Some(ctx.item.pos)))?;
+        let recipe = recipes::get_recipe_by_id(existing_step.recipe_id, db).await?;
+        authorized(RecipesPolicy, DefaultActions::Update, user, recipe.as_ref(), db)?;
 
-            return crate::steps::update_step(id, step, db).await.map_err(|e| e.into());
-        }
-
-        Err(ServerError::new("Step not found", Some(ctx.item.pos)).into())
+        crate::steps::update_step(id, step, db).await.map_err(|e| e.into())
     }
 
     async fn delete_step(&self, ctx: &Context<'_>, id: i64) -> Result<bool> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        let step = crate::steps::get_step_by_id(id, db).await?;
-        if let Some(step) = step {
-            let recipe = recipes::get_recipe_by_id(step.recipe_id, db).await?;
-            authorized(RecipesPolicy, DefaultActions::Update, user, recipe.as_ref(), db)?;
+        let step = crate::steps::get_step_by_id(id, db)
+            .await?
+            .ok_or_else(|| ServerError::new("Step not found", Some(ctx.item.pos)))?;
 
-            return crate::steps::delete_step(id, db).await.map_err(|e| e.into());
-        }
+        let recipe = recipes::get_recipe_by_id(step.recipe_id, db).await?;
+        authorized(RecipesPolicy, DefaultActions::Update, user, recipe.as_ref(), db)?;
 
-        Err(ServerError::new("Step not found", Some(ctx.item.pos)).into())
+        crate::steps::delete_step(step, db).await.map_err(|e| e.into())
     }
 }

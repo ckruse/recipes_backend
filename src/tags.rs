@@ -16,11 +16,11 @@ pub async fn list_tags(
         q = q.filter(entity::tags::Column::Name.like(&format!("%{}%", search)));
     }
 
-    Ok(q.all(db).await?)
+    q.all(db).await
 }
 
 pub async fn get_tag_by_id(id: i64, db: &DatabaseConnection) -> Result<Option<entity::tags::Model>, DbErr> {
-    Ok(entity::tags::Entity::find_by_id(id).one(db).await?)
+    entity::tags::Entity::find_by_id(id).one(db).await
 }
 
 pub async fn create_tag(name: String, db: &DatabaseConnection) -> Result<entity::tags::Model, DbErr> {

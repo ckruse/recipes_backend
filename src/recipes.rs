@@ -38,17 +38,15 @@ pub async fn list_recipes(
             .join(JoinType::InnerJoin, entity::recipes::Relation::RecipesTags.def())
             .join(JoinType::InnerJoin, entity::recipes_tags::Relation::Tags.def())
             .filter(
-                Condition::any()
-                    .add(
-                        Expr::col((entity::tags::Entity, entity::tags::Column::Name)).in_subquery(
-                            Query::select()
-                                .column(entity::tags::Column::Name)
-                                .from_as(entity::tags::Entity, tags_search_tbl.clone())
-                                .and_where(Expr::col((tags_search_tbl, entity::tags::Column::Name)).is_in(tags))
-                                .to_owned(),
-                        ),
-                    )
-                    .to_owned(),
+                Condition::any().add(
+                    Expr::col((entity::tags::Entity, entity::tags::Column::Name)).in_subquery(
+                        Query::select()
+                            .column(entity::tags::Column::Name)
+                            .from_as(entity::tags::Entity, tags_search_tbl.clone())
+                            .and_where(Expr::col((tags_search_tbl, entity::tags::Column::Name)).is_in(tags))
+                            .to_owned(),
+                    ),
+                ),
             );
     }
 
@@ -85,17 +83,15 @@ pub async fn count_recipes(
             .join(JoinType::InnerJoin, entity::recipes::Relation::RecipesTags.def())
             .join(JoinType::InnerJoin, entity::recipes_tags::Relation::Tags.def())
             .filter(
-                Condition::any()
-                    .add(
-                        Expr::col((entity::tags::Entity, entity::tags::Column::Name)).in_subquery(
-                            Query::select()
-                                .column(entity::tags::Column::Name)
-                                .from_as(entity::tags::Entity, tags_search_tbl.clone())
-                                .and_where(Expr::col((tags_search_tbl, entity::tags::Column::Name)).is_in(tags))
-                                .to_owned(),
-                        ),
-                    )
-                    .to_owned(),
+                Condition::any().add(
+                    Expr::col((entity::tags::Entity, entity::tags::Column::Name)).in_subquery(
+                        Query::select()
+                            .column(entity::tags::Column::Name)
+                            .from_as(entity::tags::Entity, tags_search_tbl.clone())
+                            .and_where(Expr::col((tags_search_tbl, entity::tags::Column::Name)).is_in(tags))
+                            .to_owned(),
+                    ),
+                ),
             );
     }
 

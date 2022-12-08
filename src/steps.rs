@@ -108,8 +108,7 @@ pub async fn update_step(
                     step_values
                         .step_ingredients
                         .iter()
-                        .find(|step_ingredient| step_ingredient.id == Some(existing_ingredient.id))
-                        .is_none()
+                        .any(|step_ingredient| step_ingredient.id == Some(existing_ingredient.id))
                 })
                 .collect::<Vec<&entity::steps_ingridients::Model>>();
 

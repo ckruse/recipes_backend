@@ -25,10 +25,7 @@ impl RecipesQueries {
 
         authorized(RecipesPolicy, DefaultActions::List, user, None, db)?;
 
-        let search = match search {
-            Some(s) => Some(s.split_whitespace().map(|s| s.to_string()).collect()),
-            None => None,
-        };
+        let search = search.map(|s| s.split_whitespace().map(|s| s.to_string()).collect());
 
         crate::recipes::list_recipes(limit, offset, search, tags, db)
             .await
@@ -46,10 +43,7 @@ impl RecipesQueries {
 
         authorized(RecipesPolicy, DefaultActions::List, user, None, db)?;
 
-        let search = match search {
-            Some(s) => Some(s.split_whitespace().map(|s| s.to_string()).collect()),
-            None => None,
-        };
+        let search = search.map(|s| s.split_whitespace().map(|s| s.to_string()).collect());
 
         crate::recipes::count_recipes(search, tags, db)
             .await

@@ -102,7 +102,7 @@ pub async fn create_user(user_values: UserInput, db: &DatabaseConnection) -> Res
         Argon2::default()
             .hash_password(password.as_bytes(), &salt)
             .ok()
-            .and_then(|v| Some(v.to_string()))
+            .map(|v| v.to_string())
     } else {
         None
     };
@@ -128,7 +128,7 @@ pub async fn update_user(id: i64, user_values: UserInput, db: &DatabaseConnectio
         let salt = SaltString::generate(&mut OsRng);
         let value = Argon2::default()
             .hash_password(password.as_bytes(), &salt)
-            .and_then(|v| Ok(v.to_string()))
+            .map(|v| v.to_string())
             .ok();
 
         Set(value)

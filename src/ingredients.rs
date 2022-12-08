@@ -26,18 +26,17 @@ pub async fn list_ingredients(
         query = query.filter(entity::ingredients::Column::Name.contains(&search));
     }
 
-    let ingredients = query.all(db).await?;
-    Ok(ingredients)
+    query.all(db).await.map_err(|e| e.into())
 }
 
-pub async fn count_ingredients(search: Option<String>, db: &DatabaseConnection) -> Result<u64, DbErr> {
+pub async fn count_ingredients(search: Option<String>, db: &DatabaseConnection) -> Result<u64> {
     let mut query = entity::ingredients::Entity::find();
 
     if let Some(search) = search {
         query = query.filter(entity::ingredients::Column::Name.contains(&search));
     }
 
-    query.count(db).await
+    query.count(db).await.map_err(|e| e.into())
 }
 
 pub async fn get_ingredient_by_id(id: i64, db: &DatabaseConnection) -> Result<Option<entity::ingredients::Model>> {
@@ -48,7 +47,7 @@ pub async fn get_ingredient_by_id(id: i64, db: &DatabaseConnection) -> Result<Op
 pub async fn create_ingredient(
     ingredient_values: IngredientInput,
     db: &DatabaseConnection,
-) -> Result<entity::ingredients::Model, DbErr> {
+) -> Result<entity::ingredients::Model> {
     let now = Utc::now().naive_utc();
 
     entity::ingredients::ActiveModel {
@@ -64,13 +63,14 @@ pub async fn create_ingredient(
     }
     .insert(db)
     .await
+    .map_err(|e| e.into())
 }
 
 pub async fn update_ingredient(
     id: i64,
     ingredient_values: IngredientInput,
     db: &DatabaseConnection,
-) -> Result<entity::ingredients::Model, DbErr> {
+) -> Result<entity::ingredients::Model> {
     let now = Utc::now().naive_utc();
 
     entity::ingredients::ActiveModel {
@@ -86,9 +86,10 @@ pub async fn update_ingredient(
     }
     .update(db)
     .await
+    .map_err(|e| e.into())
 }
 
-pub async fn delete_ingredient(id: i64, db: &DatabaseConnection) -> Result<bool, DbErr> {
+pub async fn delete_ingredient(id: i64, db: &DatabaseConnection) -> Result<bool> {
     Ok(entity::ingredients::Entity::delete_by_id(id)
         .exec(db)
         .await?

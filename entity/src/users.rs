@@ -13,7 +13,7 @@ pub enum Role {
     User,
 }
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize, SimpleObject)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize, SimpleObject)]
 #[sea_orm(table_name = "users")]
 #[graphql(complex, concrete(name = "User", params()))]
 pub struct Model {
@@ -54,13 +54,9 @@ pub struct AvatarVariants {
 #[ComplexObject]
 impl Model {
     pub async fn avatar(&self) -> Option<AvatarVariants> {
-        if let Some(avatar) = &self.avatar {
-            Some(AvatarVariants {
-                thumb: format!("{}/thumb", avatar),
-                original: avatar.clone(),
-            })
-        } else {
-            None
-        }
+        self.avatar.as_ref().map(|avatar| AvatarVariants {
+            thumb: format!("{}/thumb", avatar),
+            original: avatar.clone(),
+        })
     }
 }

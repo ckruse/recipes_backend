@@ -90,13 +90,13 @@ impl Model {
     async fn tags(&self, ctx: &Context<'_>) -> Result<Vec<tags::Model>> {
         let loader = ctx.data_unchecked::<DataLoader<RecipesLoader>>();
         let name: Option<Vec<tags::Model>> = loader.load_one(TagId(self.id)).await?;
-        Ok(name.unwrap_or(vec![]))
+        Ok(name.unwrap_or_default())
     }
 
     async fn steps(&self, ctx: &Context<'_>) -> Result<Vec<steps::Model>> {
         let loader = ctx.data_unchecked::<DataLoader<RecipesLoader>>();
         let steps: Option<Vec<steps::Model>> = loader.load_one(StepId(self.id)).await?;
-        Ok(steps.unwrap_or(vec![]))
+        Ok(steps.unwrap_or_default())
     }
 
     async fn image(&self, _ctx: &Context<'_>) -> Option<RecipeImage> {

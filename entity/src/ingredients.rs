@@ -70,7 +70,7 @@ impl Model {
         let loader = ctx.data_unchecked::<DataLoader<IngredientLoader>>();
         let units = loader.load_one(UnitId(self.id)).await?;
 
-        Ok(units.unwrap_or(vec![]))
+        Ok(units.unwrap_or_default())
     }
 
     async fn calories(&self) -> f64 {

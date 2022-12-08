@@ -24,9 +24,7 @@ impl IngredientsQueries {
 
         authorized(IngredientsPolicy, DefaultActions::List, user, None, db)?;
 
-        crate::ingredients::list_ingredients(limit, offset, search, db)
-            .await
-            .map_err(|e| e.into())
+        crate::ingredients::list_ingredients(limit, offset, search, db).await
     }
 
     pub async fn count_ingredients(&self, ctx: &Context<'_>, search: Option<String>) -> Result<u64> {
@@ -35,9 +33,7 @@ impl IngredientsQueries {
 
         authorized(IngredientsPolicy, DefaultActions::List, user, None, db)?;
 
-        crate::ingredients::count_ingredients(search, db)
-            .await
-            .map_err(|e| e.into())
+        crate::ingredients::count_ingredients(search, db).await
     }
 
     async fn ingredient(&self, ctx: &Context<'_>, id: i64) -> Result<Option<entity::ingredients::Model>> {
@@ -62,9 +58,7 @@ impl IngredientsMutations {
         let db = ctx.data::<DatabaseConnection>()?;
 
         authorized(IngredientsPolicy, DefaultActions::Create, user, None, db)?;
-        crate::ingredients::create_ingredient(ingredient, db)
-            .await
-            .map_err(|e| e.into())
+        crate::ingredients::create_ingredient(ingredient, db).await
     }
 
     async fn update_ingredient(
@@ -79,9 +73,7 @@ impl IngredientsMutations {
         let ingredient = crate::ingredients::get_ingredient_by_id(id, db).await?;
         authorized(IngredientsPolicy, DefaultActions::Update, user, ingredient.as_ref(), db)?;
 
-        crate::ingredients::update_ingredient(id, values, db)
-            .await
-            .map_err(|e| e.into())
+        crate::ingredients::update_ingredient(id, values, db).await
     }
 
     async fn delete_ingredient(&self, ctx: &Context<'_>, id: i64) -> Result<bool> {
@@ -90,8 +82,6 @@ impl IngredientsMutations {
 
         authorized(IngredientsPolicy, DefaultActions::Delete, user, None, db)?;
 
-        crate::ingredients::delete_ingredient(id, db)
-            .await
-            .map_err(|e| e.into())
+        crate::ingredients::delete_ingredient(id, db).await
     }
 }

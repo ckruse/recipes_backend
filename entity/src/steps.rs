@@ -63,7 +63,7 @@ impl Model {
     async fn step_ingredients(&self, ctx: &Context<'_>) -> Result<Vec<steps_ingridients::Model>> {
         let loader = ctx.data_unchecked::<DataLoader<StepsLoader>>();
         let steps: Option<Vec<steps_ingridients::Model>> = loader.load_one(self.id).await?;
-        Ok(steps.unwrap_or(vec![]))
+        Ok(steps.unwrap_or_default())
     }
 }
 
