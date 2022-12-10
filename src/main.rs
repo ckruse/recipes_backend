@@ -13,6 +13,7 @@ use sea_orm::DatabaseConnection;
 
 mod api;
 mod authorization;
+mod bring;
 mod ingredients;
 mod jar;
 mod recipes;
@@ -78,6 +79,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(conn.clone()))
             .wrap(cors)
             .wrap(Logger::default())
+            .service(bring::get_recipe_bring)
             .service(web::resource("/graphql").guard(guard::Post()).to(index))
             .service(web::resource("/graphql").guard(guard::Get()).to(index_graphiql))
             .service(
