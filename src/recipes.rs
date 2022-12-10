@@ -32,7 +32,7 @@ pub async fn list_recipes(
                     entity::recipes::Entity,
                     entity::recipes::Column::Name,
                 ))))
-                .like(format!("%{}%", s.to_lowercase())),
+                .like(format!("%{}%", s)),
             );
         }
 
@@ -77,7 +77,7 @@ pub async fn count_recipes(
                     entity::recipes::Entity,
                     entity::recipes::Column::Name,
                 ))))
-                .like(format!("%{}%", s.to_lowercase())),
+                .like(format!("%{}%", s)),
             );
         }
 
