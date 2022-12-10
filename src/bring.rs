@@ -16,6 +16,7 @@ use crate::recipes;
 
 #[derive(serde::Serialize)]
 pub struct BringItem {
+    #[serde(rename = "itemId")]
     pub item_id: String,
     pub spec: String,
 }
