@@ -9,7 +9,7 @@ use async_graphql::dataloader::*;
 use async_graphql::*;
 use itertools::Itertools;
 use sea_orm::entity::prelude::*;
-use sea_orm::{DatabaseConnection, FromQueryResult, JoinType, QuerySelect};
+use sea_orm::{DatabaseConnection, FromQueryResult, JoinType, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 
 use crate::{recipes_tags, steps, tags};
@@ -75,7 +75,7 @@ impl Related<super::tags::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 struct TagId(pub i64);
 #[derive(Clone, Eq, PartialEq, Hash)]
 struct StepId(i64);
@@ -120,7 +120,7 @@ pub struct RecipesLoader {
     pub conn: DatabaseConnection,
 }
 
-#[derive(FromQueryResult)]
+#[derive(FromQueryResult, Debug)]
 struct RecipeIdAndTag {
     pub recipe_id: i64,
     pub name: Option<String>,
@@ -140,6 +140,7 @@ impl Loader<TagId> for RecipesLoader {
             .join(JoinType::InnerJoin, tags::Relation::RecipesTags.def())
             .column_as(recipes_tags::Column::RecipeId, "recipe_id")
             .filter(recipes_tags::Column::RecipeId.is_in(ids))
+            .order_by_asc(recipes_tags::Column::RecipeId)
             .into_model::<RecipeIdAndTag>()
             .all(&self.conn)
             .await?;
@@ -148,7 +149,7 @@ impl Loader<TagId> for RecipesLoader {
             .into_iter()
             .group_by(|tag| tag.recipe_id)
             .into_iter()
-            .map(|(key, group)| {
+            .map(|(recipe_id, group)| {
                 let tags = group
                     .into_iter()
                     .map(|tag| tags::Model {
@@ -159,7 +160,7 @@ impl Loader<TagId> for RecipesLoader {
                     })
                     .collect();
 
-                (TagId(key), tags)
+                (TagId(recipe_id), tags)
             })
             .collect();
 
