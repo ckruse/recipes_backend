@@ -22,6 +22,8 @@ impl IngredientsQueries {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
+        let search = search.map(|s| s.split_whitespace().map(|s| s.to_lowercase()).collect());
+
         authorized(IngredientsPolicy, DefaultActions::List, user, None, db)?;
 
         crate::ingredients::list_ingredients(limit, offset, search, db).await
@@ -30,6 +32,8 @@ impl IngredientsQueries {
     pub async fn count_ingredients(&self, ctx: &Context<'_>, search: Option<String>) -> Result<u64> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
+
+        let search = search.map(|s| s.split_whitespace().map(|s| s.to_lowercase()).collect());
 
         authorized(IngredientsPolicy, DefaultActions::List, user, None, db)?;
 

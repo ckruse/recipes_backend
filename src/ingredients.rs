@@ -1,8 +1,9 @@
 use async_graphql::*;
 use chrono::Utc;
 use sea_orm::entity::prelude::*;
+use sea_orm::sea_query::{Expr, Func};
 use sea_orm::ActiveValue::{Set, Unchanged};
-use sea_orm::{DatabaseConnection, QuerySelect, TransactionTrait};
+use sea_orm::{Condition, DatabaseConnection, QuerySelect, TransactionTrait};
 
 #[derive(SimpleObject, InputObject)]
 pub struct UnitInput {
@@ -25,23 +26,47 @@ pub struct IngredientInput {
 pub async fn list_ingredients(
     limit: u64,
     offset: u64,
-    search: Option<String>,
+    search: Option<Vec<String>>,
     db: &DatabaseConnection,
 ) -> Result<Vec<entity::ingredients::Model>> {
     let mut query = entity::ingredients::Entity::find().limit(limit).offset(offset);
 
     if let Some(search) = search {
-        query = query.filter(entity::ingredients::Column::Name.contains(&search));
+        let mut cond = Condition::all();
+
+        for s in search {
+            cond = cond.add(
+                Expr::expr(Func::lower(Expr::col((
+                    entity::ingredients::Entity,
+                    entity::ingredients::Column::Name,
+                ))))
+                .like(format!("%{}%", s)),
+            );
+        }
+
+        query = query.filter(cond);
     }
 
     query.all(db).await.map_err(|e| e.into())
 }
 
-pub async fn count_ingredients(search: Option<String>, db: &DatabaseConnection) -> Result<u64> {
+pub async fn count_ingredients(search: Option<Vec<String>>, db: &DatabaseConnection) -> Result<u64> {
     let mut query = entity::ingredients::Entity::find();
 
     if let Some(search) = search {
-        query = query.filter(entity::ingredients::Column::Name.contains(&search));
+        let mut cond = Condition::all();
+
+        for s in search {
+            cond = cond.add(
+                Expr::expr(Func::lower(Expr::col((
+                    entity::ingredients::Entity,
+                    entity::ingredients::Column::Name,
+                ))))
+                .like(format!("%{}%", s)),
+            );
+        }
+
+        query = query.filter(cond);
     }
 
     query.count(db).await.map_err(|e| e.into())
