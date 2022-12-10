@@ -18,6 +18,7 @@ mod recipes;
 mod steps;
 mod tags;
 mod users;
+mod utils;
 
 async fn index(
     schema: web::Data<api::RecipesSchema>,
@@ -68,6 +69,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let cors = actix_cors::Cors::permissive();
+        let static_path = utils::image_base_path();
 
         App::new()
             .app_data(Data::new(schema.clone()))
@@ -75,6 +77,11 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .service(web::resource("/graphql").guard(guard::Post()).to(index))
             .service(web::resource("/graphql").guard(guard::Get()).to(index_graphiql))
+            .service(
+                actix_files::Files::new("/pictures", static_path)
+                    .show_files_listing()
+                    .use_last_modified(true),
+            )
     })
     .bind(addrs)?
     .run()

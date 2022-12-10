@@ -68,6 +68,8 @@ impl RecipesMutations {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
+        let file = recipe.image.as_ref().map(|picture| picture.value(ctx).unwrap());
+
         let existing_recipe = crate::recipes::get_recipe_by_id(id, db).await?;
 
         authorized(
@@ -78,7 +80,7 @@ impl RecipesMutations {
             db,
         )?;
 
-        crate::recipes::update_recipe(id, recipe, db)
+        crate::recipes::update_recipe(id, recipe, file, db)
             .await
             .map_err(|e| e.into())
     }
@@ -87,9 +89,11 @@ impl RecipesMutations {
         let user = ctx.data::<entity::users::Model>()?;
         let db = ctx.data::<DatabaseConnection>()?;
 
+        let file = recipe.image.as_ref().map(|picture| picture.value(ctx).unwrap());
+
         authorized(RecipesPolicy, DefaultActions::Create, Some(user), None, db)?;
 
-        crate::recipes::create_recipe(recipe, user.id, db)
+        crate::recipes::create_recipe(recipe, file, user.id, db)
             .await
             .map_err(|e| e.into())
     }

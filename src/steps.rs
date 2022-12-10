@@ -1,5 +1,6 @@
 use async_graphql::*;
 use chrono::Utc;
+use entity::steps::Model;
 use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{DatabaseConnection, DbErr, TransactionTrait};
@@ -140,6 +141,6 @@ pub async fn update_step(
     .map_err(|_e| DbErr::Query(sea_orm::RuntimeErr::Internal("Transaction failed".to_string())))
 }
 
-pub async fn delete_step(id: i64, db: &DatabaseConnection) -> Result<bool, DbErr> {
-    Ok(entity::recipes::Entity::delete_by_id(id).exec(db).await?.rows_affected == 1)
+pub async fn delete_step(step: Model, db: &DatabaseConnection) -> Result<bool, DbErr> {
+    Ok(step.delete(db).await?.rows_affected == 1)
 }
