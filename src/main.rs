@@ -1,5 +1,6 @@
 use std::env;
 
+use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
 use async_graphql::http::GraphiQLSource;
@@ -76,6 +77,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(schema.clone()))
             .app_data(Data::new(conn.clone()))
             .wrap(cors)
+            .wrap(Logger::default())
             .service(web::resource("/graphql").guard(guard::Post()).to(index))
             .service(web::resource("/graphql").guard(guard::Get()).to(index_graphiql))
             .service(

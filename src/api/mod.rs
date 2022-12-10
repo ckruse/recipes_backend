@@ -1,4 +1,4 @@
-use async_graphql::{dataloader::DataLoader, *};
+use async_graphql::{dataloader::DataLoader, extensions::Logger, *};
 use sea_orm::DatabaseConnection;
 
 mod ingredients;
@@ -47,6 +47,7 @@ pub fn create_schema(db: DatabaseConnection) -> RecipesSchema {
             entity::ingredients::IngredientLoader { conn: db.clone() },
             actix_web::rt::spawn,
         ))
+        .extension(Logger)
         .data(db)
         .finish()
 }
