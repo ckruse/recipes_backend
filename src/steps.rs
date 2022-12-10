@@ -96,7 +96,7 @@ pub async fn update_step(
 
     db.transaction::<_, entity::steps::Model, DbErr>(|txn| {
         Box::pin(async move {
-            let step = step.insert(txn).await?;
+            let step = step.update(txn).await?;
 
             let existing_ingredients = entity::steps_ingridients::Entity::find()
                 .filter(entity::steps_ingridients::Column::StepId.eq(step_id))
