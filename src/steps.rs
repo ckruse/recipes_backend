@@ -3,7 +3,7 @@ use chrono::Utc;
 use entity::steps::Model;
 use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{DatabaseConnection, DbErr, TransactionTrait};
+use sea_orm::{DatabaseConnection, DbErr, TransactionTrait, Unchanged};
 
 pub async fn list_steps(recipe_id: i64, db: &DatabaseConnection) -> Result<Vec<entity::steps::Model>, DbErr> {
     entity::steps::Entity::find()
@@ -84,13 +84,15 @@ pub async fn update_step(
     step_values: StepInput,
     db: &DatabaseConnection,
 ) -> Result<entity::steps::Model, DbErr> {
+    let now = Utc::now().naive_utc();
+
     let step = entity::steps::ActiveModel {
         id: Set(step_id),
         position: Set(step_values.position),
         description: Set(step_values.description.clone()),
         preparation_time: Set(step_values.preparation_time),
         cooking_time: Set(step_values.cooking_time),
-        updated_at: Set(Utc::now().naive_utc()),
+        updated_at: Set(now),
         ..Default::default()
     };
 
@@ -106,16 +108,18 @@ pub async fn update_step(
             let ingredients_to_delete = existing_ingredients
                 .iter()
                 .filter(|existing_ingredient| {
-                    step_values
+                    !step_values
                         .step_ingredients
                         .iter()
                         .any(|step_ingredient| step_ingredient.id == Some(existing_ingredient.id))
                 })
                 .collect::<Vec<&entity::steps_ingridients::Model>>();
 
-            for ingredient in ingredients_to_delete {
-                entity::recipes::Entity::delete_by_id(ingredient.id).exec(txn).await?;
-            }
+            let ids = ingredients_to_delete.iter().map(|i| i.id).collect::<Vec<i64>>();
+            entity::steps_ingridients::Entity::delete_many()
+                .filter(entity::steps_ingridients::Column::Id.is_in(ids))
+                .exec(txn)
+                .await?;
 
             for step_ingredient_values in &step_values.step_ingredients {
                 let mut step_ingredient = entity::steps_ingridients::ActiveModel {
@@ -124,11 +128,14 @@ pub async fn update_step(
                     amount: Set(step_ingredient_values.amount),
                     annotation: Set(step_ingredient_values.annotation.clone()),
                     unit_id: Set(step_ingredient_values.unit_id),
+                    updated_at: Set(now),
                     ..Default::default()
                 };
 
                 if let Some(id) = step_ingredient_values.id {
-                    step_ingredient.id = Set(id);
+                    step_ingredient.id = Unchanged(id);
+                } else {
+                    step_ingredient.inserted_at = Set(now);
                 }
 
                 step_ingredient.save(txn).await?;
