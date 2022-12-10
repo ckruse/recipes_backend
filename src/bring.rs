@@ -1,18 +1,13 @@
-use actix_web::{error, get, web, Error, HttpResponse, Result};
+use actix_web::{
+    error, get,
+    web::{self, Query},
+    Error, HttpResponse, Result,
+};
 use entity::ingredient_units::Units;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
+use serde::Deserialize;
 
 use crate::recipes;
-
-// recipe_map = %{
-//   "name" => recipe.name,
-//   "author" => recipe.owner.name || recipe.owner.email,
-//   "items" =>
-//     recipe.steps
-//     |> Enum.map(& &1.step_ingredients)
-//     |> List.flatten()
-//     |> Enum.map(&%{"itemId" => &1.ingredient.name, "spec" => calc_amount(&1,
-// valid_portions)}) }
 
 #[derive(serde::Serialize)]
 pub struct BringItem {
@@ -28,9 +23,27 @@ pub struct BringRecipe {
     pub items: Vec<BringItem>,
 }
 
+#[derive(Deserialize)]
+pub struct ProtionsQuery {
+    pub portions: Option<f64>,
+}
+
 #[get("/recipes/{id}/bring.json")]
-pub async fn get_recipe_bring(id: web::Path<i64>, db: web::Data<DatabaseConnection>) -> Result<HttpResponse, Error> {
-    let portions = 1.0;
+pub async fn get_recipe_bring(
+    id: web::Path<i64>,
+    params: Query<ProtionsQuery>,
+    db: web::Data<DatabaseConnection>,
+) -> Result<HttpResponse, Error> {
+    let portions = match params.portions {
+        Some(portions) => {
+            if portions < 0.0 {
+                1.0
+            } else {
+                portions
+            }
+        }
+        None => 1.0,
+    };
 
     let db = db.get_ref();
 
