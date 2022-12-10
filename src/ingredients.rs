@@ -2,7 +2,14 @@ use async_graphql::*;
 use chrono::Utc;
 use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::{Set, Unchanged};
-use sea_orm::{DatabaseConnection, QuerySelect};
+use sea_orm::{DatabaseConnection, QuerySelect, TransactionTrait};
+
+#[derive(SimpleObject, InputObject)]
+pub struct UnitInput {
+    id: Option<i64>,
+    identifier: entity::ingredient_units::Units,
+    base_value: f64,
+}
 
 #[derive(SimpleObject, InputObject)]
 pub struct IngredientInput {
@@ -12,6 +19,7 @@ pub struct IngredientInput {
     fat: f64,
     proteins: f64,
     alc: f64,
+    units: Option<Vec<UnitInput>>,
 }
 
 pub async fn list_ingredients(
@@ -70,10 +78,10 @@ pub async fn update_ingredient(
     id: i64,
     ingredient_values: IngredientInput,
     db: &DatabaseConnection,
-) -> Result<entity::ingredients::Model> {
+) -> Result<entity::ingredients::Model, DbErr> {
     let now = Utc::now().naive_utc();
 
-    entity::ingredients::ActiveModel {
+    let values = entity::ingredients::ActiveModel {
         id: Unchanged(id),
         name: Set(ingredient_values.name),
         reference: Set(ingredient_values.reference),
@@ -83,10 +91,45 @@ pub async fn update_ingredient(
         alc: Set(ingredient_values.alc),
         updated_at: Set(now),
         ..Default::default()
-    }
-    .update(db)
+    };
+
+    db.transaction::<_, entity::ingredients::Model, DbErr>(|txn| {
+        Box::pin(async move {
+            let ingredient = values.update(txn).await?;
+
+            if let Some(units) = ingredient_values.units {
+                let unit_ids = units.iter().filter_map(|unit| unit.id).collect::<Vec<i64>>();
+
+                entity::ingredient_units::Entity::delete_many()
+                    .filter(entity::ingredient_units::Column::Id.is_not_in(unit_ids.clone()))
+                    .filter(entity::ingredient_units::Column::IngredientId.eq(ingredient.id))
+                    .exec(txn)
+                    .await?;
+
+                for unit in units {
+                    let mut unit_values = entity::ingredient_units::ActiveModel {
+                        ingredient_id: Set(id),
+                        identifier: Set(unit.identifier),
+                        base_value: Set(unit.base_value),
+                        updated_at: Set(now),
+                        ..Default::default()
+                    };
+
+                    if let Some(id) = unit.id {
+                        unit_values.id = Set(id);
+                        unit_values.update(txn).await?;
+                    } else {
+                        unit_values.inserted_at = Set(now);
+                        unit_values.insert(txn).await?;
+                    }
+                }
+            }
+
+            Ok(ingredient)
+        })
+    })
     .await
-    .map_err(|e| e.into())
+    .map_err(|e| DbErr::Query(sea_orm::RuntimeErr::Internal(format!("Transaction failed: {}", e))))
 }
 
 pub async fn delete_ingredient(id: i64, db: &DatabaseConnection) -> Result<bool> {

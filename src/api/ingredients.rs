@@ -65,15 +65,23 @@ impl IngredientsMutations {
         &self,
         ctx: &Context<'_>,
         id: i64,
-        values: IngredientInput,
+        ingredient: IngredientInput,
     ) -> Result<entity::ingredients::Model> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
-        let ingredient = crate::ingredients::get_ingredient_by_id(id, db).await?;
-        authorized(IngredientsPolicy, DefaultActions::Update, user, ingredient.as_ref(), db)?;
+        let existing_ingredient = crate::ingredients::get_ingredient_by_id(id, db).await?;
+        authorized(
+            IngredientsPolicy,
+            DefaultActions::Update,
+            user,
+            existing_ingredient.as_ref(),
+            db,
+        )?;
 
-        crate::ingredients::update_ingredient(id, values, db).await
+        crate::ingredients::update_ingredient(id, ingredient, db)
+            .await
+            .map_err(|e| e.into())
     }
 
     async fn delete_ingredient(&self, ctx: &Context<'_>, id: i64) -> Result<bool> {
