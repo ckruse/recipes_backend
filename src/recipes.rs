@@ -1,8 +1,6 @@
-use std::ffi::OsStr;
 use std::fs::remove_dir_all;
 use std::fs::File;
 use std::io::copy;
-use std::path::Path;
 
 use async_graphql::*;
 use chrono::Utc;
@@ -14,7 +12,7 @@ use sea_orm::sea_query::{Expr, Func, Query};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{Condition, DatabaseConnection, DbErr, JoinType, QuerySelect, TransactionTrait, Unchanged};
 
-use crate::utils::{correct_orientation, get_orientation, image_base_path, read_exif};
+use crate::utils::{correct_orientation, get_extension_from_filename, get_orientation, image_base_path, read_exif};
 
 pub async fn list_recipes(
     limit: u64,
@@ -112,10 +110,6 @@ pub async fn get_recipe_by_id(id: i64, db: &DatabaseConnection) -> Result<Option
     entity::recipes::Entity::find_by_id(id).one(db).await
 }
 
-fn get_extension_from_filename(filename: &str) -> Option<&str> {
-    Path::new(filename).extension().and_then(OsStr::to_str)
-}
-
 #[derive(InputObject)]
 pub struct RecipeInput {
     pub name: String,
@@ -168,7 +162,7 @@ pub async fn create_recipe(
         })
     })
     .await
-    .map_err(|_e| DbErr::Query(sea_orm::RuntimeErr::Internal("Transaction failed".to_string())))
+    .map_err(|e| DbErr::Query(sea_orm::RuntimeErr::Internal(format!("Transaction failed: {}", e))))
 }
 
 pub async fn update_recipe(

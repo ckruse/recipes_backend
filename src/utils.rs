@@ -1,9 +1,15 @@
+use std::{ffi::OsStr, path::Path};
+
 use anyhow::Result;
 use exif::{Exif, In, Tag};
 use image::DynamicImage;
 
 pub fn image_base_path() -> String {
     std::env::var("PICTURE_DIR").expect("env variable PICTURE_DIR not set")
+}
+
+pub fn avatar_base_path() -> String {
+    std::env::var("AVATAR_DIR").expect("env variable AVATAR_DIR not set")
 }
 
 pub fn read_exif(path: &str) -> Result<Exif> {
@@ -42,4 +48,8 @@ pub fn get_orientation(exif: &Exif) -> u32 {
         },
         None => 0,
     }
+}
+
+pub fn get_extension_from_filename(filename: &str) -> Option<&str> {
+    Path::new(filename).extension().and_then(OsStr::to_str)
 }
