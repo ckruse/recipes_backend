@@ -62,7 +62,9 @@ impl IngredientsMutations {
         let db = ctx.data::<DatabaseConnection>()?;
 
         authorized(IngredientsPolicy, DefaultActions::Create, user, None, db)?;
-        crate::ingredients::create_ingredient(ingredient, db).await
+        crate::ingredients::create_ingredient(ingredient, db)
+            .await
+            .map_err(|e| e.into())
     }
 
     async fn update_ingredient(

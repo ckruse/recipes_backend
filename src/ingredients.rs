@@ -80,23 +80,45 @@ pub async fn get_ingredient_by_id(id: i64, db: &DatabaseConnection) -> Result<Op
 pub async fn create_ingredient(
     ingredient_values: IngredientInput,
     db: &DatabaseConnection,
-) -> Result<entity::ingredients::Model> {
+) -> Result<entity::ingredients::Model, DbErr> {
     let now = Utc::now().naive_utc();
 
-    entity::ingredients::ActiveModel {
-        name: Set(ingredient_values.name),
-        reference: Set(ingredient_values.reference),
-        carbs: Set(ingredient_values.carbs),
-        fat: Set(ingredient_values.fat),
-        proteins: Set(ingredient_values.proteins),
-        alc: Set(ingredient_values.alc),
-        inserted_at: Set(now),
-        updated_at: Set(now),
-        ..Default::default()
-    }
-    .insert(db)
+    db.transaction::<_, entity::ingredients::Model, DbErr>(|txn| {
+        Box::pin(async move {
+            let ingredient = entity::ingredients::ActiveModel {
+                name: Set(ingredient_values.name),
+                reference: Set(ingredient_values.reference),
+                carbs: Set(ingredient_values.carbs),
+                fat: Set(ingredient_values.fat),
+                proteins: Set(ingredient_values.proteins),
+                alc: Set(ingredient_values.alc),
+                inserted_at: Set(now),
+                updated_at: Set(now),
+                ..Default::default()
+            }
+            .insert(txn)
+            .await?;
+
+            if let Some(units) = ingredient_values.units {
+                for unit in units {
+                    entity::ingredient_units::ActiveModel {
+                        ingredient_id: Set(ingredient.id),
+                        identifier: Set(unit.identifier),
+                        base_value: Set(unit.base_value),
+                        inserted_at: Set(now),
+                        updated_at: Set(now),
+                        ..Default::default()
+                    }
+                    .insert(txn)
+                    .await?;
+                }
+            }
+
+            Ok(ingredient)
+        })
+    })
     .await
-    .map_err(|e| e.into())
+    .map_err(|e| DbErr::Query(sea_orm::RuntimeErr::Internal(format!("Transaction failed: {}", e))))
 }
 
 pub async fn update_ingredient(
