@@ -203,7 +203,6 @@ pub async fn move_step_down(step: Model, db: &DatabaseConnection) -> Result<Vec<
         .one(db)
         .await?;
 
-    dbg!(&other_step);
     if other_step.is_none() {
         return Ok(vec![step]);
     }
