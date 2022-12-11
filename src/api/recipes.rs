@@ -60,6 +60,17 @@ impl RecipesQueries {
 
         Ok(recipe)
     }
+
+    async fn random_recipe(&self, ctx: &Context<'_>) -> Result<Option<entity::recipes::Model>> {
+        let user = ctx.data_opt::<entity::users::Model>();
+        let db = ctx.data::<DatabaseConnection>()?;
+
+        let recipe = crate::recipes::get_random_recipe(db).await?;
+
+        authorized(RecipesPolicy, DefaultActions::Get, user, recipe.as_ref(), db)?;
+
+        Ok(recipe)
+    }
 }
 
 #[Object]

@@ -6,10 +6,12 @@ use async_graphql::*;
 use chrono::Utc;
 use image::imageops;
 use image::GenericImageView;
+use migration::Order;
 use migration::{Alias, DynIden};
 use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::{Expr, Func, Query};
 use sea_orm::ActiveValue::Set;
+use sea_orm::QueryOrder;
 use sea_orm::{Condition, DatabaseConnection, DbErr, JoinType, QuerySelect, TransactionTrait, Unchanged};
 
 use crate::utils::{correct_orientation, get_extension_from_filename, get_orientation, image_base_path, read_exif};
@@ -108,6 +110,13 @@ pub async fn count_recipes(
 
 pub async fn get_recipe_by_id(id: i64, db: &DatabaseConnection) -> Result<Option<entity::recipes::Model>, DbErr> {
     entity::recipes::Entity::find_by_id(id).one(db).await
+}
+
+pub async fn get_random_recipe(db: &DatabaseConnection) -> Result<Option<entity::recipes::Model>, DbErr> {
+    entity::recipes::Entity::find()
+        .order_by(Expr::cust("RANDOM()"), Order::Asc)
+        .one(db)
+        .await
 }
 
 #[derive(InputObject)]
