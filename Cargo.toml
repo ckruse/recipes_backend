@@ -13,7 +13,7 @@ entity = { path = "entity" }
 migration = { path = "migration" }
 actix-web = "4.2"
 dotenv = "0.15"
-env_logger = "0.9"
+env_logger = "0.10"
 async-graphql-actix-web = "5.0"
 jsonwebtoken = "8.1"
 argon2 = { version = "0.4", features = ["password-hash"] }
