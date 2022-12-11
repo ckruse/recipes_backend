@@ -1,7 +1,7 @@
 use entity::users::{Model as UserModel, Role};
 use sea_orm::DatabaseConnection;
 
-use super::{Authorization, DefaultActions};
+use super::{is_root, Authorization, DefaultActions};
 
 pub struct UsersPolicy;
 
@@ -16,7 +16,7 @@ impl Authorization<DefaultActions, UserModel> for UsersPolicy {
         match action {
             DefaultActions::List => true,
 
-            DefaultActions::Create => true,
+            DefaultActions::Create => is_root(user),
 
             DefaultActions::Get => true,
 

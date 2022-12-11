@@ -16,7 +16,7 @@ impl Authorization<DefaultActions, IngredientModel> for IngredientsPolicy {
     ) -> bool {
         match action {
             DefaultActions::List => true,
-            DefaultActions::Create => true,
+            DefaultActions::Create => user.is_some(),
             DefaultActions::Get => true,
             DefaultActions::Update => {
                 if let Some(user) = user {

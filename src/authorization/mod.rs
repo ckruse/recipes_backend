@@ -1,5 +1,5 @@
 use async_graphql::Error;
-use entity::users::Model as UserModel;
+use entity::users::{Model as UserModel, Role};
 use sea_orm::DatabaseConnection;
 
 pub mod ingredients_policy;
@@ -16,6 +16,16 @@ pub enum DefaultActions {
 
 pub trait Authorization<T, T1> {
     fn authorized(&self, action: T, user: Option<&UserModel>, resource: Option<&T1>, db: &DatabaseConnection) -> bool;
+}
+
+pub fn is_root(user: Option<&UserModel>) -> bool {
+    if let Some(user) = user {
+        if user.role == Role::Root {
+            return true;
+        }
+    }
+
+    false
 }
 
 pub fn authorized<T: Authorization<T1, T2>, T1, T2>(
