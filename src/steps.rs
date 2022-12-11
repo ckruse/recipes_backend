@@ -1,9 +1,10 @@
 use async_graphql::*;
 use chrono::Utc;
 use entity::steps::Model;
+use migration::Order;
 use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{DatabaseConnection, DbErr, TransactionTrait, Unchanged};
+use sea_orm::{DatabaseConnection, DbErr, QueryOrder, QuerySelect, TransactionTrait, Unchanged};
 
 pub async fn list_steps(recipe_id: i64, db: &DatabaseConnection) -> Result<Vec<entity::steps::Model>, DbErr> {
     entity::steps::Entity::find()
@@ -150,4 +151,86 @@ pub async fn update_step(
 
 pub async fn delete_step(step: Model, db: &DatabaseConnection) -> Result<bool, DbErr> {
     Ok(step.delete(db).await?.rows_affected == 1)
+}
+
+pub async fn move_step_up(step: Model, db: &DatabaseConnection) -> Result<Vec<Model>, DbErr> {
+    if step.position < 1 {
+        return Ok(vec![step]);
+    }
+
+    let other_step = entity::steps::Entity::find()
+        .filter(entity::steps::Column::RecipeId.eq(step.recipe_id))
+        .filter(entity::steps::Column::Position.lt(step.position))
+        .limit(1)
+        .order_by(entity::steps::Column::Position, Order::Desc)
+        .one(db)
+        .await?;
+
+    let mut result: Vec<Model> = vec![];
+
+    if let Some(other_step) = other_step {
+        let active_model = entity::steps::ActiveModel {
+            id: Unchanged(other_step.id),
+            position: Set(other_step.position + 1),
+            updated_at: Set(Utc::now().naive_utc()),
+            ..Default::default()
+        };
+
+        let rslt = active_model.update(db).await?;
+        result.push(rslt);
+    }
+
+    let active_model = entity::steps::ActiveModel {
+        id: Unchanged(step.id),
+        position: Set(step.position - 1),
+        updated_at: Set(Utc::now().naive_utc()),
+        ..Default::default()
+    };
+
+    let rslt = active_model.update(db).await?;
+
+    result.push(rslt);
+
+    Ok(result)
+}
+
+pub async fn move_step_down(step: Model, db: &DatabaseConnection) -> Result<Vec<Model>, DbErr> {
+    let other_step = entity::steps::Entity::find()
+        .filter(entity::steps::Column::RecipeId.eq(step.recipe_id))
+        .filter(entity::steps::Column::Position.gt(step.position))
+        .limit(1)
+        .order_by(entity::steps::Column::Position, Order::Asc)
+        .one(db)
+        .await?;
+
+    dbg!(&other_step);
+    if other_step.is_none() {
+        return Ok(vec![step]);
+    }
+
+    let mut result: Vec<Model> = vec![];
+    let other_step = other_step.unwrap();
+
+    let active_model = entity::steps::ActiveModel {
+        id: Unchanged(other_step.id),
+        position: Set(other_step.position - 1),
+        updated_at: Set(Utc::now().naive_utc()),
+        ..Default::default()
+    };
+
+    let rslt = active_model.update(db).await?;
+    result.push(rslt);
+
+    let active_model = entity::steps::ActiveModel {
+        id: Unchanged(step.id),
+        position: Set(step.position + 1),
+        updated_at: Set(Utc::now().naive_utc()),
+        ..Default::default()
+    };
+
+    let rslt = active_model.update(db).await?;
+
+    result.push(rslt);
+
+    Ok(result)
 }

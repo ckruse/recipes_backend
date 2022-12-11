@@ -91,4 +91,32 @@ impl StepsMutations {
 
         crate::steps::delete_step(step, db).await.map_err(|e| e.into())
     }
+
+    async fn move_step_up(&self, ctx: &Context<'_>, id: i64) -> Result<Vec<entity::steps::Model>> {
+        let user = ctx.data_opt::<entity::users::Model>();
+        let db = ctx.data::<DatabaseConnection>()?;
+
+        let step = crate::steps::get_step_by_id(id, db)
+            .await?
+            .ok_or_else(|| ServerError::new("Step not found", Some(ctx.item.pos)))?;
+
+        let recipe = recipes::get_recipe_by_id(step.recipe_id, db).await?;
+        authorized(RecipesPolicy, DefaultActions::Update, user, recipe.as_ref(), db)?;
+
+        crate::steps::move_step_up(step, db).await.map_err(|e| e.into())
+    }
+
+    async fn move_step_down(&self, ctx: &Context<'_>, id: i64) -> Result<Vec<entity::steps::Model>> {
+        let user = ctx.data_opt::<entity::users::Model>();
+        let db = ctx.data::<DatabaseConnection>()?;
+
+        let step = crate::steps::get_step_by_id(id, db)
+            .await?
+            .ok_or_else(|| ServerError::new("Step not found", Some(ctx.item.pos)))?;
+
+        let recipe = recipes::get_recipe_by_id(step.recipe_id, db).await?;
+        authorized(RecipesPolicy, DefaultActions::Update, user, recipe.as_ref(), db)?;
+
+        crate::steps::move_step_down(step, db).await.map_err(|e| e.into())
+    }
 }
