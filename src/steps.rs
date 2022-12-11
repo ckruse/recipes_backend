@@ -28,7 +28,7 @@ pub async fn get_step_by_id(id: i64, db: &DatabaseConnection) -> Result<Option<e
 pub struct StepIngredientInput {
     pub id: Option<i64>,
     pub ingredient_id: i64,
-    pub amount: f64,
+    pub amount: Option<f64>,
     pub annotation: Option<String>,
     pub unit_id: Option<i64>,
 }

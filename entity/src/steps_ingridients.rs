@@ -18,7 +18,7 @@ pub struct Model {
     pub id: i64,
     pub step_id: i64,
     pub ingredient_id: i64,
-    pub amount: f64,
+    pub amount: Option<f64>,
     pub annotation: Option<String>,
     pub inserted_at: DateTime,
     pub updated_at: DateTime,

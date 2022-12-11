@@ -126,17 +126,21 @@ fn calc_amount(
     portions: f64,
     units: &[entity::ingredient_units::Model],
 ) -> String {
-    let amount = step_ingredient.amount * portions;
+    if let Some(amount) = step_ingredient.amount {
+        let amount = amount * portions;
 
-    if let Some(unit_id) = &step_ingredient.unit_id {
-        let unit = units.iter().find(|unit| unit.id == *unit_id).unwrap();
+        if let Some(unit_id) = &step_ingredient.unit_id {
+            let unit = units.iter().find(|unit| unit.id == *unit_id).unwrap();
 
-        let grams = amount * portions * unit.base_value;
+            let grams = amount * portions * unit.base_value;
 
-        return format!("{:.2} {} ({:.2}g)", amount, unit_to_str(&unit.identifier), grams);
+            return format!("{:.2} {} ({:.2}g)", amount, unit_to_str(&unit.identifier), grams);
+        }
+
+        format!("{:.2}g", amount)
+    } else {
+        "".to_owned()
     }
-
-    format!("{:.2}g", amount)
 }
 
 fn unit_to_str(unit: &Units) -> &str {
