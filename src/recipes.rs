@@ -119,6 +119,14 @@ pub async fn get_random_recipe(db: &DatabaseConnection) -> Result<Option<entity:
         .await
 }
 
+pub async fn get_random_recipes(limit: u64, db: &DatabaseConnection) -> Result<Vec<entity::recipes::Model>, DbErr> {
+    entity::recipes::Entity::find()
+        .order_by(Expr::cust("RANDOM()"), Order::Asc)
+        .limit(limit)
+        .all(db)
+        .await
+}
+
 #[derive(InputObject)]
 pub struct RecipeInput {
     pub name: String,
