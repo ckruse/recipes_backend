@@ -22,6 +22,11 @@ impl TagsQueries {
             .map_err(|e| e.into())
     }
 
+    async fn count_tags(&self, ctx: &Context<'_>, search: Option<String>) -> Result<u64> {
+        let db = ctx.data::<DatabaseConnection>()?;
+        crate::tags::count_tags(search, db).await.map_err(|e| e.into())
+    }
+
     async fn tag(&self, ctx: &Context<'_>, id: i64) -> Result<Option<entity::tags::Model>> {
         let db = ctx.data::<DatabaseConnection>()?;
         crate::tags::get_tag_by_id(id, db).await.map_err(|e| e.into())

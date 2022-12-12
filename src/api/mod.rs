@@ -47,6 +47,10 @@ pub fn create_schema(db: DatabaseConnection) -> RecipesSchema {
             entity::ingredients::IngredientLoader { conn: db.clone() },
             actix_web::rt::spawn,
         ))
+        .data(DataLoader::new(
+            entity::tags::TagsLoader { conn: db.clone() },
+            actix_web::rt::spawn,
+        ))
         .extension(Logger)
         .data(db)
         .finish()

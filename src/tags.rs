@@ -19,6 +19,16 @@ pub async fn list_tags(
     q.all(db).await
 }
 
+pub async fn count_tags(search: Option<String>, db: &DatabaseConnection) -> Result<u64, DbErr> {
+    let mut q = entity::tags::Entity::find();
+
+    if let Some(search) = search {
+        q = q.filter(entity::tags::Column::Name.like(&format!("%{}%", search)));
+    }
+
+    q.count(db).await
+}
+
 pub async fn get_tag_by_id(id: i64, db: &DatabaseConnection) -> Result<Option<entity::tags::Model>, DbErr> {
     entity::tags::Entity::find_by_id(id).one(db).await
 }
