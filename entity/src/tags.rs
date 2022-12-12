@@ -5,8 +5,9 @@ use std::sync::Arc;
 
 use async_graphql::dataloader::*;
 use async_graphql::*;
+use sea_orm::entity::prelude::*;
+use sea_orm::sea_query::Expr;
 use sea_orm::QuerySelect;
-use sea_orm::{entity::prelude::*, sea_query::Expr};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, SimpleObject)]
