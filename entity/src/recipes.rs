@@ -178,6 +178,7 @@ impl Loader<StepId> for RecipesLoader {
 
         let steps = steps::Entity::find()
             .filter(steps::Column::RecipeId.is_in(ids))
+            .order_by_asc(steps::Column::RecipeId)
             .into_model::<steps::Model>()
             .all(&self.conn)
             .await?;
