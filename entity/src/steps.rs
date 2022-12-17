@@ -5,7 +5,7 @@ use std::sync::Arc;
 use async_graphql::dataloader::*;
 use async_graphql::*;
 use itertools::Itertools;
-use sea_orm::entity::prelude::*;
+use sea_orm::{entity::prelude::*, QueryOrder};
 use serde::{Deserialize, Serialize};
 
 use crate::steps_ingridients;
@@ -75,6 +75,7 @@ impl Loader<i64> for StepsLoader {
     async fn load(&self, keys: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
         let steps = steps_ingridients::Entity::find()
             .filter(steps_ingridients::Column::StepId.is_in(keys.to_vec()))
+            .order_by_asc(steps_ingridients::Column::StepId)
             .into_model::<steps_ingridients::Model>()
             .all(&self.conn)
             .await?;

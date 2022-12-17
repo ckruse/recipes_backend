@@ -5,7 +5,7 @@ use std::sync::Arc;
 use async_graphql::dataloader::*;
 use async_graphql::*;
 use itertools::Itertools;
-use sea_orm::entity::prelude::*;
+use sea_orm::{entity::prelude::*, QueryOrder};
 use serde::{Deserialize, Serialize};
 
 use crate::ingredient_units;
@@ -88,6 +88,7 @@ impl Loader<UnitId> for IngredientLoader {
 
         let units = ingredient_units::Entity::find()
             .filter(ingredient_units::Column::IngredientId.is_in(ids))
+            .order_by_asc(ingredient_units::Column::IngredientId)
             .into_model::<ingredient_units::Model>()
             .all(&self.conn)
             .await?;
