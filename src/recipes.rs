@@ -133,7 +133,7 @@ pub struct RecipeInput {
     pub name: String,
     pub description: Option<String>,
     pub image: Option<Upload>,
-    #[graphql(validator(min_items = 3))]
+    #[graphql(validator(max_items = 3))]
     pub tags: Option<Vec<i64>>,
 }
 
