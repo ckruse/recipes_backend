@@ -1,7 +1,6 @@
 use async_graphql::*;
 use chrono::Utc;
 use entity::steps::Model;
-use migration::Order;
 use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{DatabaseConnection, DbErr, QueryOrder, QuerySelect, TransactionTrait, Unchanged};
@@ -163,27 +162,31 @@ pub async fn move_step_up(step: Model, db: &DatabaseConnection) -> Result<Vec<Mo
         .filter(entity::steps::Column::RecipeId.eq(step.recipe_id))
         .filter(entity::steps::Column::Position.lt(step.position))
         .limit(1)
-        .order_by(entity::steps::Column::Position, Order::Desc)
+        .order_by_desc(entity::steps::Column::Position)
         .one(db)
         .await?;
 
     let mut result: Vec<Model> = vec![];
 
-    if let Some(other_step) = other_step {
+    let new_position = if let Some(other_step) = other_step {
         let active_model = entity::steps::ActiveModel {
             id: Unchanged(other_step.id),
-            position: Set(other_step.position + 1),
+            position: Set(step.position + 1),
             updated_at: Set(Utc::now().naive_utc()),
             ..Default::default()
         };
 
         let rslt = active_model.update(db).await?;
         result.push(rslt);
-    }
+
+        other_step.position
+    } else {
+        step.position - 1
+    };
 
     let active_model = entity::steps::ActiveModel {
         id: Unchanged(step.id),
-        position: Set(step.position - 1),
+        position: Set(new_position),
         updated_at: Set(Utc::now().naive_utc()),
         ..Default::default()
     };
@@ -200,7 +203,7 @@ pub async fn move_step_down(step: Model, db: &DatabaseConnection) -> Result<Vec<
         .filter(entity::steps::Column::RecipeId.eq(step.recipe_id))
         .filter(entity::steps::Column::Position.gt(step.position))
         .limit(1)
-        .order_by(entity::steps::Column::Position, Order::Asc)
+        .order_by_asc(entity::steps::Column::Position)
         .one(db)
         .await?;
 
@@ -209,21 +212,25 @@ pub async fn move_step_down(step: Model, db: &DatabaseConnection) -> Result<Vec<
     }
 
     let mut result: Vec<Model> = vec![];
-    let other_step = other_step.unwrap();
+    let new_position = if let Some(other_step) = other_step {
+        let active_model = entity::steps::ActiveModel {
+            id: Unchanged(other_step.id),
+            position: Set(step.position),
+            updated_at: Set(Utc::now().naive_utc()),
+            ..Default::default()
+        };
 
-    let active_model = entity::steps::ActiveModel {
-        id: Unchanged(other_step.id),
-        position: Set(other_step.position - 1),
-        updated_at: Set(Utc::now().naive_utc()),
-        ..Default::default()
+        let rslt = active_model.update(db).await?;
+        result.push(rslt);
+
+        other_step.position
+    } else {
+        step.position + 1
     };
-
-    let rslt = active_model.update(db).await?;
-    result.push(rslt);
 
     let active_model = entity::steps::ActiveModel {
         id: Unchanged(step.id),
-        position: Set(step.position + 1),
+        position: Set(new_position),
         updated_at: Set(Utc::now().naive_utc()),
         ..Default::default()
     };
