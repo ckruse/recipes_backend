@@ -89,6 +89,7 @@ impl Loader<UnitId> for IngredientLoader {
         let units = ingredient_units::Entity::find()
             .filter(ingredient_units::Column::IngredientId.is_in(ids))
             .order_by_asc(ingredient_units::Column::IngredientId)
+            .order_by_asc(ingredient_units::Column::Id)
             .into_model::<ingredient_units::Model>()
             .all(&self.conn)
             .await?;

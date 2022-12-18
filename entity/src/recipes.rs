@@ -141,6 +141,7 @@ impl Loader<TagId> for RecipesLoader {
             .column_as(recipes_tags::Column::RecipeId, "recipe_id")
             .filter(recipes_tags::Column::RecipeId.is_in(ids))
             .order_by_asc(recipes_tags::Column::RecipeId)
+            .order_by_asc(tags::Column::Name)
             .into_model::<RecipeIdAndTag>()
             .all(&self.conn)
             .await?;
@@ -179,6 +180,7 @@ impl Loader<StepId> for RecipesLoader {
         let steps = steps::Entity::find()
             .filter(steps::Column::RecipeId.is_in(ids))
             .order_by_asc(steps::Column::RecipeId)
+            .order_by_asc(steps::Column::Position)
             .into_model::<steps::Model>()
             .all(&self.conn)
             .await?;

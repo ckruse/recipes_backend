@@ -76,6 +76,7 @@ impl Loader<i64> for StepsLoader {
         let steps = steps_ingridients::Entity::find()
             .filter(steps_ingridients::Column::StepId.is_in(keys.to_vec()))
             .order_by_asc(steps_ingridients::Column::StepId)
+            .order_by_asc(steps_ingridients::Column::Id)
             .into_model::<steps_ingridients::Model>()
             .all(&self.conn)
             .await?;
