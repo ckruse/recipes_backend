@@ -129,9 +129,11 @@ pub async fn get_random_recipes(limit: u64, db: &DatabaseConnection) -> Result<V
 
 #[derive(InputObject)]
 pub struct RecipeInput {
+    #[graphql(validator(chars_min_length = 3, chars_max_length = 255))]
     pub name: String,
     pub description: Option<String>,
     pub image: Option<Upload>,
+    #[graphql(validator(min_items = 3))]
     pub tags: Option<Vec<i64>>,
 }
 

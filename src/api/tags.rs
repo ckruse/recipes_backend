@@ -14,7 +14,7 @@ impl TagsQueries {
         ctx: &Context<'_>,
         limit: u64,
         offset: u64,
-        search: Option<String>,
+        #[graphql(validator(max_length = 255))] search: Option<String>,
     ) -> Result<Vec<entity::tags::Model>> {
         let db = ctx.data::<DatabaseConnection>()?;
         crate::tags::list_tags(limit, offset, search, db)
@@ -22,7 +22,11 @@ impl TagsQueries {
             .map_err(|e| e.into())
     }
 
-    async fn count_tags(&self, ctx: &Context<'_>, search: Option<String>) -> Result<u64> {
+    async fn count_tags(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(max_length = 255))] search: Option<String>,
+    ) -> Result<u64> {
         let db = ctx.data::<DatabaseConnection>()?;
         crate::tags::count_tags(search, db).await.map_err(|e| e.into())
     }
@@ -35,13 +39,22 @@ impl TagsQueries {
 
 #[Object]
 impl TagsMutations {
-    async fn create_tag(&self, ctx: &Context<'_>, name: String) -> Result<entity::tags::Model> {
+    async fn create_tag(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(chars_min_length = 3, chars_max_length = 255))] name: String,
+    ) -> Result<entity::tags::Model> {
         ctx.data::<entity::users::Model>().map_err(|_| "Not logged in")?;
         let db = ctx.data::<DatabaseConnection>()?;
         crate::tags::create_tag(name, db).await.map_err(|e| e.into())
     }
 
-    async fn update_tag(&self, ctx: &Context<'_>, id: i64, name: String) -> Result<entity::tags::Model> {
+    async fn update_tag(
+        &self,
+        ctx: &Context<'_>,
+        id: i64,
+        #[graphql(validator(chars_min_length = 3, chars_max_length = 255))] name: String,
+    ) -> Result<entity::tags::Model> {
         ctx.data::<entity::users::Model>().map_err(|_| "Not logged in")?;
         let db = ctx.data::<DatabaseConnection>()?;
         crate::tags::update_tag(id, name, db).await.map_err(|e| e.into())

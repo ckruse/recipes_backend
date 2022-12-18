@@ -19,7 +19,7 @@ impl UsersQueries {
         ctx: &Context<'_>,
         limit: u64,
         offset: u64,
-        search: Option<String>,
+        #[graphql(validator(max_length = 255))] search: Option<String>,
     ) -> Result<Vec<entity::users::Model>> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
@@ -31,7 +31,11 @@ impl UsersQueries {
             .map_err(|e| e.into())
     }
 
-    async fn count_users(&self, ctx: &Context<'_>, search: Option<String>) -> Result<u64> {
+    async fn count_users(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(max_length = 255))] search: Option<String>,
+    ) -> Result<u64> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 

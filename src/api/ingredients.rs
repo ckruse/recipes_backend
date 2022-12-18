@@ -17,7 +17,7 @@ impl IngredientsQueries {
         ctx: &Context<'_>,
         limit: u64,
         offset: u64,
-        search: Option<String>,
+        #[graphql(validator(max_length = 255))] search: Option<String>,
     ) -> Result<Vec<entity::ingredients::Model>> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
@@ -29,7 +29,11 @@ impl IngredientsQueries {
         crate::ingredients::list_ingredients(limit, offset, search, db).await
     }
 
-    pub async fn count_ingredients(&self, ctx: &Context<'_>, search: Option<String>) -> Result<u64> {
+    pub async fn count_ingredients(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(max_length = 255))] search: Option<String>,
+    ) -> Result<u64> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 

@@ -36,6 +36,7 @@ pub struct StepIngredientInput {
 #[derive(SimpleObject, InputObject)]
 pub struct StepInput {
     pub position: i32,
+    #[graphql(validator(max_length = 12288))]
     pub description: Option<String>,
     pub preparation_time: i32,
     pub cooking_time: i32,

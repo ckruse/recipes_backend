@@ -15,8 +15,8 @@ impl RecipesQueries {
     async fn recipes(
         &self,
         ctx: &Context<'_>,
-        search: Option<String>,
-        tags: Option<Vec<String>>,
+        #[graphql(validator(max_length = 255))] search: Option<String>,
+        #[graphql(validator(max_items = 3))] tags: Option<Vec<String>>,
         limit: u64,
         offset: u64,
     ) -> Result<Vec<entity::recipes::Model>> {

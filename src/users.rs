@@ -15,8 +15,11 @@ use crate::utils::{avatar_base_path, correct_orientation, get_extension_from_fil
 
 #[derive(InputObject)]
 pub struct UserInput {
+    #[graphql(validator(email, max_length = 255))]
     pub email: String,
+    #[graphql(validator(max_length = 1024))]
     pub password: Option<String>,
+    #[graphql(validator(max_length = 255))]
     pub name: Option<String>,
     pub avatar: Option<Upload>,
     pub role: Role,

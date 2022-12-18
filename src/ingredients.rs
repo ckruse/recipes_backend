@@ -14,6 +14,7 @@ pub struct UnitInput {
 
 #[derive(SimpleObject, InputObject)]
 pub struct IngredientInput {
+    #[graphql(validator(chars_min_length = 3, chars_max_length = 255))]
     name: String,
     reference: entity::ingredients::Reference,
     carbs: f64,
