@@ -3,7 +3,7 @@ use chrono::Utc;
 use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::{Expr, Func};
 use sea_orm::ActiveValue::{Set, Unchanged};
-use sea_orm::{Condition, DatabaseConnection, QuerySelect, TransactionTrait};
+use sea_orm::{Condition, DatabaseConnection, QueryOrder, QuerySelect, TransactionTrait};
 
 #[derive(SimpleObject, InputObject)]
 pub struct UnitInput {
@@ -48,7 +48,11 @@ pub async fn list_ingredients(
         query = query.filter(cond);
     }
 
-    query.all(db).await.map_err(|e| e.into())
+    query
+        .order_by_asc(entity::ingredients::Column::Name)
+        .all(db)
+        .await
+        .map_err(|e| e.into())
 }
 
 pub async fn count_ingredients(search: Option<Vec<String>>, db: &DatabaseConnection) -> Result<u64> {

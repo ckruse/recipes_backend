@@ -2,7 +2,7 @@ use async_graphql::*;
 use chrono::Utc;
 use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::{Set, Unchanged};
-use sea_orm::{DatabaseConnection, DbErr, QuerySelect};
+use sea_orm::{DatabaseConnection, DbErr, QueryOrder, QuerySelect};
 
 pub async fn list_tags(
     limit: u64,
@@ -16,7 +16,7 @@ pub async fn list_tags(
         q = q.filter(entity::tags::Column::Name.like(&format!("%{}%", search)));
     }
 
-    q.all(db).await
+    q.order_by_asc(entity::tags::Column::Name).all(db).await
 }
 
 pub async fn count_tags(search: Option<String>, db: &DatabaseConnection) -> Result<u64, DbErr> {

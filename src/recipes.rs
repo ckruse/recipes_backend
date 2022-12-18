@@ -60,7 +60,7 @@ pub async fn list_recipes(
             );
     }
 
-    query.all(db).await
+    query.order_by_asc(entity::recipes::Column::Name).all(db).await
 }
 
 pub async fn count_recipes(
