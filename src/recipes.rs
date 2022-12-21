@@ -11,6 +11,7 @@ use migration::{Alias, DynIden};
 use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::{Expr, Func, Query};
 use sea_orm::ActiveValue::Set;
+use sea_orm::DatabaseTransaction;
 use sea_orm::QueryOrder;
 use sea_orm::{Condition, DatabaseConnection, DbErr, JoinType, QuerySelect, TransactionTrait, Unchanged};
 
@@ -135,6 +136,7 @@ pub struct RecipeInput {
     pub image: Option<Upload>,
     #[graphql(validator(max_items = 3))]
     pub tags: Option<Vec<i64>>,
+    pub fitting_recipes: Option<Vec<i64>>,
 }
 
 pub async fn create_recipe(
@@ -167,6 +169,17 @@ pub async fn create_recipe(
                     entity::recipes_tags::ActiveModel {
                         recipe_id: Set(recipe.id),
                         tag_id: Set(tag),
+                    }
+                    .insert(txn)
+                    .await?;
+                }
+            }
+
+            if let Some(fitting_recipes) = recipe_values.fitting_recipes {
+                for fitting_recipe in fitting_recipes {
+                    entity::fitting::ActiveModel {
+                        recipe_id: Set(recipe.id),
+                        fitting_recipe_id: Set(fitting_recipe),
                     }
                     .insert(txn)
                     .await?;
@@ -206,33 +219,8 @@ pub async fn update_recipe(
         Box::pin(async move {
             let recipe = recipe.update(txn).await?;
 
-            if let Some(tags) = values.tags {
-                entity::recipes_tags::Entity::delete_many()
-                    .filter(entity::recipes_tags::Column::TagId.is_not_in(tags.clone()))
-                    .filter(entity::recipes_tags::Column::RecipeId.eq(recipe.id))
-                    .exec(txn)
-                    .await?;
-
-                let existing_tag_ids = entity::recipes_tags::Entity::find()
-                    .filter(entity::recipes_tags::Column::TagId.is_in(tags.clone()))
-                    .filter(entity::recipes_tags::Column::RecipeId.eq(recipe.id))
-                    .all(txn)
-                    .await?;
-
-                let new_tags = tags
-                    .into_iter()
-                    .filter(|tag| !existing_tag_ids.iter().any(|t| t.tag_id == *tag))
-                    .collect::<Vec<i64>>();
-
-                for tag in new_tags {
-                    entity::recipes_tags::ActiveModel {
-                        recipe_id: Set(recipe.id),
-                        tag_id: Set(tag),
-                    }
-                    .insert(txn)
-                    .await?;
-                }
-            }
+            update_save_tags(values.tags, recipe.id, txn).await?;
+            update_save_fitting_recipes(values.fitting_recipes, recipe.id, txn).await?;
 
             if let Some(picture) = picture {
                 save_picture(&recipe, picture)?;
@@ -243,6 +231,74 @@ pub async fn update_recipe(
     })
     .await
     .map_err(|e| DbErr::Query(sea_orm::RuntimeErr::Internal(format!("Transaction failed: {}", e))))
+}
+
+async fn update_save_tags(tags: Option<Vec<i64>>, recipe_id: i64, txn: &DatabaseTransaction) -> Result<(), DbErr> {
+    if let Some(tags) = tags {
+        entity::recipes_tags::Entity::delete_many()
+            .filter(entity::recipes_tags::Column::TagId.is_not_in(tags.clone()))
+            .filter(entity::recipes_tags::Column::RecipeId.eq(recipe_id))
+            .exec(txn)
+            .await?;
+
+        let existing_tag_ids = entity::recipes_tags::Entity::find()
+            .filter(entity::recipes_tags::Column::TagId.is_in(tags.clone()))
+            .filter(entity::recipes_tags::Column::RecipeId.eq(recipe_id))
+            .all(txn)
+            .await?;
+
+        let new_tags = tags
+            .into_iter()
+            .filter(|tag| !existing_tag_ids.iter().any(|t| t.tag_id == *tag))
+            .collect::<Vec<i64>>();
+
+        for tag in new_tags {
+            entity::recipes_tags::ActiveModel {
+                recipe_id: Set(recipe_id),
+                tag_id: Set(tag),
+            }
+            .insert(txn)
+            .await?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn update_save_fitting_recipes(
+    fitting_ids: Option<Vec<i64>>,
+    recipe_id: i64,
+    txn: &DatabaseTransaction,
+) -> Result<(), DbErr> {
+    if let Some(fitting_ids) = fitting_ids {
+        entity::fitting::Entity::delete_many()
+            .filter(entity::fitting::Column::FittingRecipeId.is_not_in(fitting_ids.clone()))
+            .filter(entity::fitting::Column::RecipeId.eq(recipe_id))
+            .exec(txn)
+            .await?;
+
+        let existing_fitting_ids = entity::fitting::Entity::find()
+            .filter(entity::fitting::Column::FittingRecipeId.is_in(fitting_ids.clone()))
+            .filter(entity::fitting::Column::RecipeId.eq(recipe_id))
+            .all(txn)
+            .await?;
+
+        let new_fitting_ids = fitting_ids
+            .into_iter()
+            .filter(|fitting_id| !existing_fitting_ids.iter().any(|f| f.fitting_recipe_id == *fitting_id))
+            .collect::<Vec<i64>>();
+
+        for fitting_id in new_fitting_ids {
+            entity::fitting::ActiveModel {
+                recipe_id: Set(recipe_id),
+                fitting_recipe_id: Set(fitting_id),
+            }
+            .insert(txn)
+            .await?;
+        }
+    }
+
+    Ok(())
 }
 
 fn save_picture(recipe: &entity::recipes::Model, mut picture: UploadValue) -> Result<(), DbErr> {

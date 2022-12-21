@@ -1,3 +1,4 @@
+pub mod fitting;
 pub mod ingredient_units;
 pub mod ingredients;
 pub mod recipes;

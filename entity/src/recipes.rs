@@ -12,11 +12,11 @@ use sea_orm::entity::prelude::*;
 use sea_orm::{DatabaseConnection, FromQueryResult, JoinType, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 
-use crate::{recipes_tags, steps, tags};
+use crate::{fitting, recipes_tags, steps, tags};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, SimpleObject)]
 #[sea_orm(table_name = "recipes")]
-#[graphql(complex, concrete(name = "Recipe", params()))]
+#[graphql(complex, name = "Recipe")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
@@ -44,6 +44,8 @@ pub enum Relation {
         on_delete = "SetNull"
     )]
     Users,
+    #[sea_orm(has_many = "super::fitting::Entity")]
+    Fitting,
 }
 
 impl Related<super::steps::Entity> for Entity {
@@ -73,12 +75,20 @@ impl Related<super::tags::Entity> for Entity {
     }
 }
 
+impl Related<super::fitting::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Fitting.def()
+    }
+}
+
 impl ActiveModelBehavior for ActiveModel {}
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 struct TagId(pub i64);
 #[derive(Clone, Eq, PartialEq, Hash)]
 struct StepId(i64);
+#[derive(Clone, Eq, PartialEq, Hash)]
+struct FittingRecipesId(i64);
 
 #[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct RecipeImage {
@@ -103,6 +113,12 @@ impl Model {
         let loader = ctx.data_unchecked::<DataLoader<RecipesLoader>>();
         let steps: Option<Vec<steps::Model>> = loader.load_one(StepId(self.id)).await?;
         Ok(steps.unwrap_or_default())
+    }
+
+    async fn fitting_recipes(&self, ctx: &Context<'_>) -> Result<Vec<Model>> {
+        let loader = ctx.data_unchecked::<DataLoader<RecipesLoader>>();
+        let fitting_recipes: Option<Vec<Model>> = loader.load_one(FittingRecipesId(self.id)).await?;
+        Ok(fitting_recipes.unwrap_or_default())
     }
 
     async fn image(&self, _ctx: &Context<'_>) -> Option<RecipeImage> {
@@ -190,6 +206,67 @@ impl Loader<StepId> for RecipesLoader {
             .group_by(|step| step.recipe_id)
             .into_iter()
             .map(|(key, group)| (StepId(key), group.collect()))
+            .collect();
+
+        Ok(map)
+    }
+}
+
+#[derive(FromQueryResult, Debug)]
+struct RecipeIdRecipe {
+    pub recipe_id: i64,
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub owner_id: Option<i64>,
+    pub inserted_at: DateTime,
+    pub updated_at: DateTime,
+    pub image: Option<String>,
+}
+
+#[async_trait::async_trait]
+impl Loader<FittingRecipesId> for RecipesLoader {
+    type Value = Vec<Model>;
+    type Error = Arc<sea_orm::error::DbErr>;
+
+    async fn load(&self, keys: &[FittingRecipesId]) -> Result<HashMap<FittingRecipesId, Self::Value>, Self::Error> {
+        let ids = keys.iter().map(|k| k.0).collect_vec();
+
+        let fitting_recipes = Entity::find()
+            .join(
+                JoinType::InnerJoin,
+                Entity::has_many(fitting::Entity)
+                    .from(Column::Id)
+                    .to(fitting::Column::FittingRecipeId)
+                    .into(),
+            )
+            .column_as(fitting::Column::RecipeId, "recipe_id")
+            .filter(fitting::Column::RecipeId.is_in(ids))
+            .order_by_asc(fitting::Column::RecipeId)
+            .into_model::<RecipeIdRecipe>()
+            .all(&self.conn)
+            .await?;
+
+        let map = fitting_recipes
+            .into_iter()
+            .group_by(|recipe| recipe.recipe_id)
+            .into_iter()
+            .map(|(key, group)| {
+                let recipes = group
+                    .into_iter()
+                    .map(|recipe| Model {
+                        id: recipe.id,
+                        name: recipe.name,
+                        description: recipe.description,
+                        owner_id: recipe.owner_id,
+                        inserted_at: recipe.inserted_at,
+                        updated_at: recipe.updated_at,
+                        image: recipe.image,
+                    })
+                    .collect();
+
+                (FittingRecipesId(key), recipes)
+            })
             .collect();
 
         Ok(map)
