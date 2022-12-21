@@ -21,6 +21,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
     pub name: String,
+    pub default_servings: i32,
     #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
     pub owner_id: Option<i64>,
@@ -213,10 +214,11 @@ impl Loader<StepId> for RecipesLoader {
 }
 
 #[derive(FromQueryResult, Debug)]
-struct RecipeIdRecipe {
+struct RecipeIdAndRecipe {
     pub recipe_id: i64,
     pub id: i64,
     pub name: String,
+    pub default_servings: i32,
     pub description: Option<String>,
     pub owner_id: Option<i64>,
     pub inserted_at: DateTime,
@@ -243,7 +245,7 @@ impl Loader<FittingRecipesId> for RecipesLoader {
             .column_as(fitting::Column::RecipeId, "recipe_id")
             .filter(fitting::Column::RecipeId.is_in(ids))
             .order_by_asc(fitting::Column::RecipeId)
-            .into_model::<RecipeIdRecipe>()
+            .into_model::<RecipeIdAndRecipe>()
             .all(&self.conn)
             .await?;
 
@@ -257,6 +259,7 @@ impl Loader<FittingRecipesId> for RecipesLoader {
                     .map(|recipe| Model {
                         id: recipe.id,
                         name: recipe.name,
+                        default_servings: recipe.default_servings,
                         description: recipe.description,
                         owner_id: recipe.owner_id,
                         inserted_at: recipe.inserted_at,

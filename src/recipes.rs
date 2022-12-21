@@ -132,6 +132,7 @@ pub async fn get_random_recipes(limit: u64, db: &DatabaseConnection) -> Result<V
 pub struct RecipeInput {
     #[graphql(validator(chars_min_length = 3, chars_max_length = 255))]
     pub name: String,
+    pub default_servings: i32,
     pub description: Option<String>,
     pub image: Option<Upload>,
     #[graphql(validator(max_items = 3))]
@@ -149,6 +150,7 @@ pub async fn create_recipe(
 
     let mut new_recipe = entity::recipes::ActiveModel {
         name: Set(recipe_values.name),
+        default_servings: Set(recipe_values.default_servings),
         description: Set(recipe_values.description),
         inserted_at: Set(now),
         updated_at: Set(now),
@@ -206,6 +208,7 @@ pub async fn update_recipe(
     let mut recipe = entity::recipes::ActiveModel {
         id: Unchanged(id),
         name: Set(values.name),
+        default_servings: Set(values.default_servings),
         description: Set(values.description),
         updated_at: Set(Utc::now().naive_utc()),
         ..Default::default()
