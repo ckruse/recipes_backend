@@ -16,6 +16,7 @@ use crate::steps_ingridients;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
+    pub name: Option<String>,
     pub recipe_id: i64,
     pub position: i32,
     #[sea_orm(column_type = "Text", nullable)]

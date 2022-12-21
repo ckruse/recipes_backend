@@ -34,6 +34,7 @@ pub struct StepIngredientInput {
 
 #[derive(SimpleObject, InputObject)]
 pub struct StepInput {
+    pub name: Option<String>,
     pub position: i32,
     #[graphql(validator(max_length = 12288))]
     pub description: Option<String>,
@@ -50,6 +51,7 @@ pub async fn create_step(
     let now = Utc::now().naive_utc();
 
     let step = entity::steps::ActiveModel {
+        name: Set(step_values.name.clone()),
         recipe_id: Set(recipe_id),
         position: Set(step_values.position),
         description: Set(step_values.description.clone()),
@@ -89,6 +91,7 @@ pub async fn update_step(
 
     let step = entity::steps::ActiveModel {
         id: Set(step_id),
+        name: Set(step_values.name.clone()),
         position: Set(step_values.position),
         description: Set(step_values.description.clone()),
         preparation_time: Set(step_values.preparation_time),
