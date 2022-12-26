@@ -120,12 +120,35 @@ pub async fn get_random_recipe(db: &DatabaseConnection) -> Result<Option<entity:
         .await
 }
 
-pub async fn get_random_recipes(limit: u64, db: &DatabaseConnection) -> Result<Vec<entity::recipes::Model>, DbErr> {
-    entity::recipes::Entity::find()
+pub async fn get_random_recipes(
+    limit: u64,
+    tags: Vec<String>,
+    db: &DatabaseConnection,
+) -> Result<Vec<entity::recipes::Model>, DbErr> {
+    let mut query = entity::recipes::Entity::find()
         .order_by(Expr::cust("RANDOM()"), Order::Asc)
-        .limit(limit)
-        .all(db)
-        .await
+        .limit(limit);
+
+    if !tags.is_empty() {
+        let tags_search_tbl: DynIden = sea_orm::sea_query::SeaRc::new(Alias::new("tags_search"));
+
+        query = query
+            .join(JoinType::InnerJoin, entity::recipes::Relation::RecipesTags.def())
+            .join(JoinType::InnerJoin, entity::recipes_tags::Relation::Tags.def())
+            .filter(
+                Condition::any().add(
+                    Expr::col((entity::tags::Entity, entity::tags::Column::Name)).in_subquery(
+                        Query::select()
+                            .column(entity::tags::Column::Name)
+                            .from_as(entity::tags::Entity, tags_search_tbl.clone())
+                            .and_where(Expr::col((tags_search_tbl, entity::tags::Column::Name)).is_in(tags))
+                            .to_owned(),
+                    ),
+                ),
+            );
+    }
+
+    query.all(db).await
 }
 
 #[derive(InputObject)]
@@ -135,7 +158,7 @@ pub struct RecipeInput {
     pub default_servings: i32,
     pub description: Option<String>,
     pub image: Option<Upload>,
-    #[graphql(validator(max_items = 3))]
+    #[graphql(validator(max_items = 5))]
     pub tags: Option<Vec<i64>>,
     pub fitting_recipes: Option<Vec<i64>>,
 }

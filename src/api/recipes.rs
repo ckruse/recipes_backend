@@ -72,13 +72,18 @@ impl RecipesQueries {
         Ok(recipe)
     }
 
-    async fn random_recipes(&self, ctx: &Context<'_>, limit: u64) -> Result<Vec<entity::recipes::Model>> {
+    async fn random_recipes(
+        &self,
+        ctx: &Context<'_>,
+        limit: u64,
+        tags: Option<Vec<String>>,
+    ) -> Result<Vec<entity::recipes::Model>> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
         authorized(RecipesPolicy, DefaultActions::List, user, None, db)?;
 
-        crate::recipes::get_random_recipes(limit, db)
+        crate::recipes::get_random_recipes(limit, tags.unwrap_or_default(), db)
             .await
             .map_err(|e| e.into())
     }
