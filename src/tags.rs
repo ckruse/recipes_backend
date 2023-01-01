@@ -37,7 +37,7 @@ pub async fn create_tag(name: String, db: &DatabaseConnection) -> Result<entity:
     let now = Utc::now().naive_utc();
 
     let tag = entity::tags::ActiveModel {
-        name: Set(Some(name.to_lowercase())),
+        name: Set(name.to_lowercase()),
         inserted_at: Set(now),
         updated_at: Set(now),
         ..Default::default()
@@ -49,7 +49,7 @@ pub async fn create_tag(name: String, db: &DatabaseConnection) -> Result<entity:
 pub async fn update_tag(id: i64, name: String, db: &DatabaseConnection) -> Result<entity::tags::Model, DbErr> {
     let tag: entity::tags::ActiveModel = entity::tags::ActiveModel {
         id: Unchanged(id),
-        name: Set(Some(name.to_lowercase())),
+        name: Set(name.to_lowercase()),
         updated_at: Set(Utc::now().naive_utc()),
         ..Default::default()
     };

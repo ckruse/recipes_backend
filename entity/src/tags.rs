@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub name: Option<String>,
+    pub name: String,
     pub inserted_at: DateTime,
     pub updated_at: DateTime,
 }

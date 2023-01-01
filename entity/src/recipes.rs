@@ -140,7 +140,7 @@ pub struct RecipesLoader {
 #[derive(FromQueryResult, Debug)]
 struct RecipeIdAndTag {
     pub recipe_id: i64,
-    pub name: Option<String>,
+    pub name: String,
     pub id: i64,
     pub inserted_at: DateTime,
     pub updated_at: DateTime,
