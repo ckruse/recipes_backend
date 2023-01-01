@@ -43,22 +43,28 @@ pub async fn list_recipes(
     }
 
     if let Some(tags) = tags {
-        let tags_search_tbl: DynIden = sea_orm::sea_query::SeaRc::new(Alias::new("tags_search"));
-
-        query = query
-            .join(JoinType::InnerJoin, entity::recipes::Relation::RecipesTags.def())
-            .join(JoinType::InnerJoin, entity::recipes_tags::Relation::Tags.def())
-            .filter(
-                Condition::any().add(
-                    Expr::col((entity::tags::Entity, entity::tags::Column::Name)).in_subquery(
-                        Query::select()
-                            .column(entity::tags::Column::Name)
-                            .from_as(entity::tags::Entity, tags_search_tbl.clone())
-                            .and_where(Expr::col((tags_search_tbl, entity::tags::Column::Name)).is_in(tags))
-                            .to_owned(),
-                    ),
+        for tag in tags {
+            query = query.filter(
+                Expr::col(entity::recipes::Column::Id).in_subquery(
+                    Query::select()
+                        .column(entity::recipes_tags::Column::RecipeId)
+                        .from(entity::recipes_tags::Entity)
+                        .join(
+                            JoinType::InnerJoin,
+                            entity::tags::Entity,
+                            Condition::all().add(
+                                Expr::col(entity::tags::Column::Id)
+                                    .eq(Expr::col((
+                                        entity::recipes_tags::Entity,
+                                        entity::recipes_tags::Column::TagId,
+                                    )))
+                                    .and(Expr::col((entity::tags::Entity, entity::tags::Column::Name)).eq(tag)),
+                            ),
+                        )
+                        .to_owned(),
                 ),
-            );
+            )
+        }
     }
 
     query.order_by_asc(entity::recipes::Column::Name).all(db).await
