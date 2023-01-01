@@ -7,3 +7,4 @@ pub mod steps;
 pub mod steps_ingridients;
 pub mod tags;
 pub mod users;
+pub mod weekplans;

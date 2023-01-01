@@ -21,6 +21,7 @@ mod steps;
 mod tags;
 mod users;
 mod utils;
+mod weekplan;
 
 async fn index(
     schema: web::Data<api::RecipesSchema>,

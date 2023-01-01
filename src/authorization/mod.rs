@@ -5,6 +5,7 @@ use sea_orm::DatabaseConnection;
 pub mod ingredients_policy;
 pub mod recipes_policy;
 pub mod users_policy;
+pub mod weekplan_policy;
 
 pub enum DefaultActions {
     List,

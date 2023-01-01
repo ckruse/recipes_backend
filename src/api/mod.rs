@@ -7,6 +7,7 @@ mod session;
 mod steps;
 mod tags;
 mod users;
+mod weekplans;
 
 #[derive(async_graphql::MergedObject, Default)]
 pub struct MutationRoot(
@@ -16,6 +17,7 @@ pub struct MutationRoot(
     ingredients::IngredientsMutations,
     users::UsersMutations,
     steps::StepsMutations,
+    weekplans::WeekplansMutations,
 );
 
 #[derive(async_graphql::MergedObject, Default)]
@@ -25,6 +27,7 @@ pub struct QueryRoot(
     ingredients::IngredientsQueries,
     users::UsersQueries,
     steps::StepsQueries,
+    weekplans::WeekplansQueries,
 );
 
 pub type RecipesSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
@@ -49,6 +52,10 @@ pub fn create_schema(db: DatabaseConnection) -> RecipesSchema {
         ))
         .data(DataLoader::new(
             entity::tags::TagsLoader { conn: db.clone() },
+            actix_web::rt::spawn,
+        ))
+        .data(DataLoader::new(
+            entity::weekplans::WeekplanLoader { conn: db.clone() },
             actix_web::rt::spawn,
         ))
         .extension(Logger)
