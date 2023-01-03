@@ -44,4 +44,29 @@ impl WeekplansMutations {
             .await
             .map_err(|e| e.into())
     }
+
+    async fn replace_weekplan_recipe(&self, ctx: &Context<'_>, id: i64, tags: Vec<String>) -> Result<Weekplan> {
+        let user = ctx.data_opt::<entity::users::Model>();
+        let db = ctx.data::<DatabaseConnection>()?;
+
+        let weekplan = crate::weekplan::get_weekplan_by_id(id, db).await?;
+        authorized(WeekplanPolicy, DefaultActions::Update, user, weekplan.as_ref(), db)?;
+
+        // due to policy check the entry is a Some
+        let weekplan = weekplan.unwrap();
+
+        crate::weekplan::replace_weekplan_recipe(weekplan, tags, db)
+            .await
+            .map_err(|e| e.into())
+    }
+
+    async fn delete_weekplan(&self, ctx: &Context<'_>, id: i64) -> Result<bool> {
+        let user = ctx.data_opt::<entity::users::Model>();
+        let db = ctx.data::<DatabaseConnection>()?;
+
+        let weekplan = crate::weekplan::get_weekplan_by_id(id, db).await?;
+        authorized(WeekplanPolicy, DefaultActions::Delete, user, weekplan.as_ref(), db)?;
+
+        crate::weekplan::delete_weekplan(id, db).await.map_err(|e| e.into())
+    }
 }
