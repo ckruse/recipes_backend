@@ -44,17 +44,6 @@ pub async fn get_recipe_bring(
     params: Query<ProtionsQuery>,
     db: web::Data<DatabaseConnection>,
 ) -> Result<HttpResponse, Error> {
-    let portions = match params.portions {
-        Some(portions) => {
-            if portions < 0.0 {
-                1.0
-            } else {
-                portions
-            }
-        }
-        None => 1.0,
-    };
-
     let db = db.get_ref();
 
     let recipe = recipes::get_recipe_by_id(*id, db)
@@ -62,6 +51,17 @@ pub async fn get_recipe_bring(
         .map_err(error::ErrorInternalServerError)?;
 
     if let Some(recipe) = recipe {
+        let portions = match params.portions {
+            Some(portions) => {
+                if portions < 0.0 {
+                    recipe.default_servings as f64
+                } else {
+                    portions
+                }
+            }
+            None => 1.0,
+        };
+
         let owner = recipe
             .find_related(entity::users::Entity)
             .one(db)
