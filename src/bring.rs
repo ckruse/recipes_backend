@@ -61,8 +61,7 @@ pub async fn get_recipe_bring(
             .one(db)
             .await
             .map_err(error::ErrorInternalServerError)?
-            .unwrap();
-        // TODO: .ok_or(error::ErrorNotFound("User not found"))?;
+            .ok_or_else(|| error::ErrorNotFound("User not found"))?;
 
         let step_ingredients = recipe
             .find_related(entity::steps::Entity)
