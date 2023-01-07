@@ -81,6 +81,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .wrap(Logger::default())
             .service(bring::get_recipe_bring)
+            .service(bring::get_weekplan_bring)
             .service(web::resource("/graphql").guard(guard::Post()).to(index))
             .service(web::resource("/graphql").guard(guard::Get()).to(index_graphiql))
             .service(
