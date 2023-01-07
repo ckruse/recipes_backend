@@ -1,9 +1,12 @@
+use std::collections::HashMap;
+
 use actix_web::{
     error, get,
     web::{self, Query},
     Error, HttpResponse, Result,
 };
-use entity::ingredient_units::Units;
+use entity::ingredient_units;
+use entity::ingredients;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
 use serde::Deserialize;
 
@@ -28,6 +31,13 @@ pub struct ProtionsQuery {
     pub portions: Option<f64>,
 }
 
+struct BringInfo {
+    ingedient: ingredients::Model,
+    unit: Option<ingredient_units::Model>,
+    amount: f64,
+    notes: Vec<String>,
+}
+
 #[get("/recipes/{id}/bring.json")]
 pub async fn get_recipe_bring(
     id: web::Path<i64>,
@@ -47,13 +57,9 @@ pub async fn get_recipe_bring(
 
     let db = db.get_ref();
 
-    log::debug!("id: {:?}", id);
-
     let recipe = recipes::get_recipe_by_id(*id, db)
         .await
         .map_err(error::ErrorInternalServerError)?;
-
-    log::debug!("recipe: {:?}", recipe);
 
     if let Some(recipe) = recipe {
         let owner = recipe
@@ -95,21 +101,37 @@ pub async fn get_recipe_bring(
             .await
             .map_err(error::ErrorInternalServerError)?;
 
+        let mut all_ingredients: HashMap<i64, HashMap<i64, BringInfo>> = HashMap::new();
+
+        for si in step_ingredients {
+            let unit_key = si.unit_id.unwrap_or(-1);
+
+            let row = all_ingredients.entry(si.ingredient_id).or_insert_with(HashMap::new);
+            let info = row.entry(unit_key).or_insert(BringInfo {
+                ingedient: ingredients.iter().find(|i| i.id == si.ingredient_id).unwrap().clone(),
+                unit: units.iter().find(|u| u.id == unit_key).cloned(),
+                amount: 0.0,
+                notes: Vec::new(),
+            });
+
+            if let Some(amount) = si.amount {
+                info.amount += amount;
+            }
+
+            if let Some(note) = si.annotation {
+                info.notes.push(note);
+            }
+        }
+
         let desc = BringRecipe {
             name: recipe.name,
             author: owner.name.unwrap_or(owner.email),
-            items: step_ingredients
-                .iter()
-                .map(|step_ingredient| {
-                    let ingredient = ingredients
-                        .iter()
-                        .find(|ingredient| ingredient.id == step_ingredient.ingredient_id)
-                        .unwrap();
-
-                    BringItem {
-                        item_id: ingredient.name.clone(),
-                        spec: calc_amount(step_ingredient, portions, &units),
-                    }
+            items: all_ingredients
+                .values()
+                .flat_map(|row| row.values())
+                .map(|info| BringItem {
+                    item_id: info.ingedient.name.clone(),
+                    spec: calc_amount(info.amount, portions, &info.unit),
                 })
                 .collect(),
         };
@@ -120,17 +142,11 @@ pub async fn get_recipe_bring(
     }
 }
 
-fn calc_amount(
-    step_ingredient: &entity::steps_ingridients::Model,
-    portions: f64,
-    units: &[entity::ingredient_units::Model],
-) -> String {
-    if let Some(amount) = step_ingredient.amount {
+fn calc_amount(amount: f64, portions: f64, unit: &Option<ingredient_units::Model>) -> String {
+    if amount > 0.0 {
         let amount = amount * portions;
 
-        if let Some(unit_id) = &step_ingredient.unit_id {
-            let unit = units.iter().find(|unit| unit.id == *unit_id).unwrap();
-
+        if let Some(unit) = &unit {
             let grams = amount * portions * unit.base_value;
 
             return format!("{:.2} {} ({:.2}g)", amount, unit_to_str(&unit.identifier), grams);
@@ -142,12 +158,12 @@ fn calc_amount(
     }
 }
 
-fn unit_to_str(unit: &Units) -> &str {
+fn unit_to_str(unit: &ingredient_units::Units) -> &str {
     match unit {
-        Units::PCS => "Stück",
-        Units::TBSP => "Esslöffel",
-        Units::TSP => "Teelöffel",
-        Units::SKOSH => "Prise",
-        Units::PINCH => "Messerspitze",
+        ingredient_units::Units::PCS => "Stück",
+        ingredient_units::Units::TBSP => "Esslöffel",
+        ingredient_units::Units::TSP => "Teelöffel",
+        ingredient_units::Units::SKOSH => "Prise",
+        ingredient_units::Units::PINCH => "Messerspitze",
     }
 }
