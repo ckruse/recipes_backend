@@ -32,7 +32,7 @@ pub struct ProtionsQuery {
 }
 
 struct BringInfo {
-    ingedient: ingredients::Model,
+    ingredient: ingredients::Model,
     unit: Option<ingredient_units::Model>,
     amount: f64,
     notes: Vec<String>,
@@ -104,18 +104,30 @@ pub async fn get_recipe_bring(
         let mut all_ingredients: HashMap<i64, HashMap<i64, BringInfo>> = HashMap::new();
 
         for si in step_ingredients {
-            let unit_key = si.unit_id.unwrap_or(-1);
+            let mut unit_key = si.unit_id.unwrap_or(-1);
+            let mut unit = units.iter().find(|u| u.id == unit_key).cloned();
+            let mut factor = unit.as_ref().map(|u| u.base_value).unwrap_or(1.0);
+            let ingredient = ingredients.iter().find(|i| i.id == si.ingredient_id).unwrap().clone();
+
+            if let Some(iunit) = &unit {
+                if iunit.identifier == ingredient_units::Units::PCS {
+                    factor = 1.0;
+                } else {
+                    unit_key = -1;
+                    unit = None;
+                }
+            }
 
             let row = all_ingredients.entry(si.ingredient_id).or_insert_with(HashMap::new);
             let info = row.entry(unit_key).or_insert(BringInfo {
-                ingedient: ingredients.iter().find(|i| i.id == si.ingredient_id).unwrap().clone(),
-                unit: units.iter().find(|u| u.id == unit_key).cloned(),
+                ingredient,
+                unit,
                 amount: 0.0,
                 notes: Vec::new(),
             });
 
             if let Some(amount) = si.amount {
-                info.amount += amount;
+                info.amount += amount * factor;
             }
 
             if let Some(note) = si.annotation {
@@ -130,7 +142,7 @@ pub async fn get_recipe_bring(
                 .values()
                 .flat_map(|row| row.values())
                 .map(|info| BringItem {
-                    item_id: info.ingedient.name.clone(),
+                    item_id: info.ingredient.name.clone(),
                     spec: calc_amount(info.amount, portions, &info.unit),
                 })
                 .collect(),
