@@ -12,8 +12,8 @@ impl TagsQueries {
     async fn tags(
         &self,
         ctx: &Context<'_>,
-        limit: u64,
-        offset: u64,
+        limit: Option<u64>,
+        offset: Option<u64>,
         #[graphql(validator(max_length = 255))] search: Option<String>,
     ) -> Result<Vec<entity::tags::Model>> {
         let db = ctx.data::<DatabaseConnection>()?;
