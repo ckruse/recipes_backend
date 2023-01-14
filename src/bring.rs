@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 use entity::ingredient_units;
 use entity::ingredients;
 use entity::steps;
-use entity::steps_ingridients;
+use entity::steps_ingredients;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
 use serde::Deserialize;
 
@@ -78,13 +78,13 @@ pub async fn get_recipe_bring(
 
     let step_ingredients = recipe
         .find_related(entity::steps::Entity)
-        .find_also_related(steps_ingridients::Entity)
+        .find_also_related(steps_ingredients::Entity)
         .all(db)
         .await
         .map_err(error::ErrorInternalServerError)?
         .into_iter()
         .flat_map(|(_step, step_ingredients)| step_ingredients)
-        .collect::<Vec<steps_ingridients::Model>>();
+        .collect::<Vec<steps_ingredients::Model>>();
 
     let ingredient_ids = step_ingredients
         .iter()
@@ -202,14 +202,14 @@ pub async fn get_weekplan_bring(
     let recipe_ids = weekplans.iter().map(|r| r.recipe_id).collect::<Vec<i64>>();
     let step_ingredients = entity::steps::Entity::find()
         .filter(entity::steps::Column::RecipeId.is_in(recipe_ids))
-        .find_also_related(steps_ingridients::Entity)
+        .find_also_related(steps_ingredients::Entity)
         .all(db)
         .await
         .map_err(error::ErrorInternalServerError)?
         .into_iter()
         .filter(|(_step, step_ingredients)| step_ingredients.is_some())
         .map(|(step, step_ingredients)| (step, step_ingredients.unwrap()))
-        .collect::<Vec<(steps::Model, steps_ingridients::Model)>>();
+        .collect::<Vec<(steps::Model, steps_ingredients::Model)>>();
 
     let ingredient_ids = step_ingredients
         .iter()
@@ -240,7 +240,7 @@ pub async fn get_weekplan_bring(
             .iter()
             .filter(|(step, _)| step.recipe_id == weekplan_entry.recipe_id)
             .map(|(_, step_ingredient)| step_ingredient)
-            .collect::<Vec<&steps_ingridients::Model>>();
+            .collect::<Vec<&steps_ingredients::Model>>();
 
         for si in step_ingredients {
             let mut unit_key = si.unit_id.unwrap_or(-1);

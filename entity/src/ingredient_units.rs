@@ -42,7 +42,7 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Ingredients,
-    #[sea_orm(has_many = "super::steps_ingridients::Entity")]
+    #[sea_orm(has_many = "super::steps_ingredients::Entity")]
     StepsIngridients,
 }
 
@@ -52,7 +52,7 @@ impl Related<super::ingredients::Entity> for Entity {
     }
 }
 
-impl Related<super::steps_ingridients::Entity> for Entity {
+impl Related<super::steps_ingredients::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::StepsIngridients.def()
     }

@@ -8,7 +8,7 @@ use itertools::Itertools;
 use sea_orm::{entity::prelude::*, QueryOrder};
 use serde::{Deserialize, Serialize};
 
-use crate::steps_ingridients;
+use crate::steps_ingredients;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, SimpleObject)]
 #[sea_orm(table_name = "steps")]
@@ -37,7 +37,7 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Recipes,
-    #[sea_orm(has_many = "super::steps_ingridients::Entity")]
+    #[sea_orm(has_many = "super::steps_ingredients::Entity")]
     StepsIngridients,
 }
 
@@ -47,7 +47,7 @@ impl Related<super::recipes::Entity> for Entity {
     }
 }
 
-impl Related<super::steps_ingridients::Entity> for Entity {
+impl Related<super::steps_ingredients::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::StepsIngridients.def()
     }
@@ -61,24 +61,24 @@ pub struct StepsLoader {
 
 #[ComplexObject]
 impl Model {
-    async fn step_ingredients(&self, ctx: &Context<'_>) -> Result<Vec<steps_ingridients::Model>> {
+    async fn step_ingredients(&self, ctx: &Context<'_>) -> Result<Vec<steps_ingredients::Model>> {
         let loader = ctx.data_unchecked::<DataLoader<StepsLoader>>();
-        let steps: Option<Vec<steps_ingridients::Model>> = loader.load_one(self.id).await?;
+        let steps: Option<Vec<steps_ingredients::Model>> = loader.load_one(self.id).await?;
         Ok(steps.unwrap_or_default())
     }
 }
 
 #[async_trait::async_trait]
 impl Loader<i64> for StepsLoader {
-    type Value = Vec<steps_ingridients::Model>;
+    type Value = Vec<steps_ingredients::Model>;
     type Error = Arc<sea_orm::error::DbErr>;
 
     async fn load(&self, keys: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let steps = steps_ingridients::Entity::find()
-            .filter(steps_ingridients::Column::StepId.is_in(keys.to_vec()))
-            .order_by_asc(steps_ingridients::Column::StepId)
-            .order_by_asc(steps_ingridients::Column::Id)
-            .into_model::<steps_ingridients::Model>()
+        let steps = steps_ingredients::Entity::find()
+            .filter(steps_ingredients::Column::StepId.is_in(keys.to_vec()))
+            .order_by_asc(steps_ingredients::Column::StepId)
+            .order_by_asc(steps_ingredients::Column::Id)
+            .into_model::<steps_ingredients::Model>()
             .all(&self.conn)
             .await?;
 

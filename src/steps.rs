@@ -65,7 +65,7 @@ pub async fn create_step(
     let step = step.insert(db).await?;
 
     for step_ingredient in &step_values.step_ingredients {
-        let step_ingredient = entity::steps_ingridients::ActiveModel {
+        let step_ingredient = entity::steps_ingredients::ActiveModel {
             step_id: Set(step.id),
             ingredient_id: Set(step_ingredient.ingredient_id),
             amount: Set(step_ingredient.amount),
@@ -104,8 +104,8 @@ pub async fn update_step(
         Box::pin(async move {
             let step = step.update(txn).await?;
 
-            let existing_ingredients = entity::steps_ingridients::Entity::find()
-                .filter(entity::steps_ingridients::Column::StepId.eq(step_id))
+            let existing_ingredients = entity::steps_ingredients::Entity::find()
+                .filter(entity::steps_ingredients::Column::StepId.eq(step_id))
                 .all(txn)
                 .await?;
 
@@ -117,16 +117,16 @@ pub async fn update_step(
                         .iter()
                         .any(|step_ingredient| step_ingredient.id == Some(existing_ingredient.id))
                 })
-                .collect::<Vec<&entity::steps_ingridients::Model>>();
+                .collect::<Vec<&entity::steps_ingredients::Model>>();
 
             let ids = ingredients_to_delete.iter().map(|i| i.id).collect::<Vec<i64>>();
-            entity::steps_ingridients::Entity::delete_many()
-                .filter(entity::steps_ingridients::Column::Id.is_in(ids))
+            entity::steps_ingredients::Entity::delete_many()
+                .filter(entity::steps_ingredients::Column::Id.is_in(ids))
                 .exec(txn)
                 .await?;
 
             for step_ingredient_values in &step_values.step_ingredients {
-                let mut step_ingredient = entity::steps_ingridients::ActiveModel {
+                let mut step_ingredient = entity::steps_ingredients::ActiveModel {
                     step_id: Set(step.id),
                     ingredient_id: Set(step_ingredient_values.ingredient_id),
                     amount: Set(step_ingredient_values.amount),

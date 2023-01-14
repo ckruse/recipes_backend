@@ -43,7 +43,7 @@ pub fn create_schema(db: DatabaseConnection) -> RecipesSchema {
             actix_web::rt::spawn,
         ))
         .data(DataLoader::new(
-            entity::steps_ingridients::StepIngredientLoader { conn: db.clone() },
+            entity::steps_ingredients::StepIngredientLoader { conn: db.clone() },
             actix_web::rt::spawn,
         ))
         .data(DataLoader::new(

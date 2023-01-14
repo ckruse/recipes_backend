@@ -6,6 +6,6 @@ pub use super::recipes::Entity as Recipes;
 pub use super::recipes_tags::Entity as RecipesTags;
 pub use super::schema_migrations::Entity as SchemaMigrations;
 pub use super::steps::Entity as Steps;
-pub use super::steps_ingridients::Entity as StepsIngridients;
+pub use super::steps_ingredients::Entity as StepsIngredients;
 pub use super::tags::Entity as Tags;
 pub use super::users::Entity as Users;

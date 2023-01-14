@@ -12,7 +12,7 @@ use sea_orm::entity::prelude::*;
 use sea_orm::{DatabaseConnection, FromQueryResult, JoinType, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 
-use crate::{fitting, ingredient_units, ingredients, recipes_tags, steps, steps_ingridients, tags};
+use crate::{fitting, ingredient_units, ingredients, recipes_tags, steps, steps_ingredients, tags};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, SimpleObject)]
 #[sea_orm(table_name = "recipes")]
@@ -314,19 +314,19 @@ impl Loader<CaloriesId> for RecipesLoader {
     async fn load(&self, keys: &[CaloriesId]) -> Result<HashMap<CaloriesId, Self::Value>, Self::Error> {
         let ids = keys.iter().map(|k| k.0).collect_vec();
 
-        let calories = steps_ingridients::Entity::find()
-            .join(JoinType::InnerJoin, steps_ingridients::Relation::Steps.def())
-            .join(JoinType::InnerJoin, steps_ingridients::Relation::Ingredients.def())
+        let calories = steps_ingredients::Entity::find()
+            .join(JoinType::InnerJoin, steps_ingredients::Relation::Steps.def())
+            .join(JoinType::InnerJoin, steps_ingredients::Relation::Ingredients.def())
             .select_only()
             .column_as(steps::Column::RecipeId, "recipe_id")
             .column_as(ingredients::Column::Carbs, "carbs")
             .column_as(ingredients::Column::Fat, "fat")
             .column_as(ingredients::Column::Proteins, "proteins")
             .column_as(ingredients::Column::Alc, "alc")
-            .column_as(steps_ingridients::Column::UnitId, "unit_id")
-            .column_as(steps_ingridients::Column::Amount, "amount")
+            .column_as(steps_ingredients::Column::UnitId, "unit_id")
+            .column_as(steps_ingredients::Column::Amount, "amount")
             .filter(steps::Column::RecipeId.is_in(ids))
-            .filter(steps_ingridients::Column::Amount.is_not_null())
+            .filter(steps_ingredients::Column::Amount.is_not_null())
             .order_by_asc(steps::Column::RecipeId)
             .into_model::<RecipeIdAndCalories>()
             .all(&self.conn)
