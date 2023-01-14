@@ -302,7 +302,7 @@ struct RecipeIdAndCalories {
     fat: f64,
     proteins: f64,
     alc: f64,
-    unit_id: Option<i64>,
+    base_value: Option<f64>,
     amount: Option<f64>,
 }
 
@@ -317,25 +317,19 @@ impl Loader<CaloriesId> for RecipesLoader {
         let calories = steps_ingredients::Entity::find()
             .join(JoinType::InnerJoin, steps_ingredients::Relation::Steps.def())
             .join(JoinType::InnerJoin, steps_ingredients::Relation::Ingredients.def())
+            .join(JoinType::LeftJoin, steps_ingredients::Relation::IngredientUnits.def())
             .select_only()
             .column_as(steps::Column::RecipeId, "recipe_id")
             .column_as(ingredients::Column::Carbs, "carbs")
             .column_as(ingredients::Column::Fat, "fat")
             .column_as(ingredients::Column::Proteins, "proteins")
             .column_as(ingredients::Column::Alc, "alc")
-            .column_as(steps_ingredients::Column::UnitId, "unit_id")
+            .column_as(ingredient_units::Column::BaseValue, "base_value")
             .column_as(steps_ingredients::Column::Amount, "amount")
             .filter(steps::Column::RecipeId.is_in(ids))
             .filter(steps_ingredients::Column::Amount.is_not_null())
             .order_by_asc(steps::Column::RecipeId)
             .into_model::<RecipeIdAndCalories>()
-            .all(&self.conn)
-            .await?;
-
-        let unit_ids = calories.iter().filter_map(|row| row.unit_id).collect_vec();
-
-        let units = ingredient_units::Entity::find()
-            .filter(ingredient_units::Column::Id.is_in(unit_ids))
             .all(&self.conn)
             .await?;
 
@@ -353,14 +347,8 @@ impl Loader<CaloriesId> for RecipesLoader {
                         calories: 0.0,
                     },
                     |mut acc, row| {
-                        let unit = if let Some(unit_id) = row.unit_id {
-                            units.iter().find(|unit| unit.id == unit_id)
-                        } else {
-                            None
-                        };
-
                         let amount = row.amount.unwrap();
-                        let grams = unit.map(|unit| unit.base_value * amount).unwrap_or(amount) / 100.0;
+                        let grams = row.base_value.map(|bv| bv * amount).unwrap_or(amount) / 100.0;
 
                         acc.carbs += row.carbs * grams;
                         acc.fats += row.fat * grams;
