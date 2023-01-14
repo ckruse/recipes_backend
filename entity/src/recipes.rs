@@ -12,7 +12,7 @@ use sea_orm::entity::prelude::*;
 use sea_orm::{DatabaseConnection, FromQueryResult, JoinType, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 
-use crate::{fitting, recipes_tags, steps, tags};
+use crate::{fitting, ingredient_units, ingredients, recipes_tags, steps, steps_ingridients, tags};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, SimpleObject)]
 #[sea_orm(table_name = "recipes")]
@@ -91,6 +91,9 @@ struct StepId(i64);
 #[derive(Clone, Eq, PartialEq, Hash)]
 struct FittingRecipesId(i64);
 
+#[derive(Clone, Eq, PartialEq, Hash)]
+struct CaloriesId(i64);
+
 #[derive(Clone, Debug, Serialize, Deserialize, SimpleObject)]
 pub struct RecipeImage {
     pub thumb: String,
@@ -100,6 +103,15 @@ pub struct RecipeImage {
 
 fn get_extension_from_filename(filename: &str) -> Option<&str> {
     Path::new(filename).extension().and_then(OsStr::to_str)
+}
+
+#[derive(Clone, Debug, Serialize, SimpleObject)]
+struct CaloriesResult {
+    proteins: f64,
+    carbs: f64,
+    fats: f64,
+    alcohol: f64,
+    calories: f64,
 }
 
 #[ComplexObject]
@@ -130,6 +142,13 @@ impl Model {
             large: format!("/pictures/{}/large.{}", self.id, ext),
             original: format!("/pictures/{}/original.{}", self.id, ext),
         })
+    }
+
+    async fn calories(&self, ctx: &Context<'_>) -> Result<Option<CaloriesResult>> {
+        let loader = ctx.data_unchecked::<DataLoader<RecipesLoader>>();
+        let calories = loader.load_one(CaloriesId(self.id)).await?;
+
+        Ok(calories)
     }
 }
 
@@ -269,6 +288,91 @@ impl Loader<FittingRecipesId> for RecipesLoader {
                     .collect();
 
                 (FittingRecipesId(key), recipes)
+            })
+            .collect();
+
+        Ok(map)
+    }
+}
+
+#[derive(FromQueryResult, Debug)]
+struct RecipeIdAndCalories {
+    recipe_id: i64,
+    carbs: f64,
+    fat: f64,
+    proteins: f64,
+    alc: f64,
+    unit_id: Option<i64>,
+    amount: Option<f64>,
+}
+
+#[async_trait::async_trait]
+impl Loader<CaloriesId> for RecipesLoader {
+    type Value = CaloriesResult;
+    type Error = Arc<sea_orm::error::DbErr>;
+
+    async fn load(&self, keys: &[CaloriesId]) -> Result<HashMap<CaloriesId, Self::Value>, Self::Error> {
+        let ids = keys.iter().map(|k| k.0).collect_vec();
+
+        let calories = steps_ingridients::Entity::find()
+            .join(JoinType::InnerJoin, steps_ingridients::Relation::Steps.def())
+            .join(JoinType::InnerJoin, steps_ingridients::Relation::Ingredients.def())
+            .select_only()
+            .column_as(steps::Column::RecipeId, "recipe_id")
+            .column_as(ingredients::Column::Carbs, "carbs")
+            .column_as(ingredients::Column::Fat, "fat")
+            .column_as(ingredients::Column::Proteins, "proteins")
+            .column_as(ingredients::Column::Alc, "alc")
+            .column_as(steps_ingridients::Column::UnitId, "unit_id")
+            .column_as(steps_ingridients::Column::Amount, "amount")
+            .filter(steps::Column::RecipeId.is_in(ids))
+            .filter(steps_ingridients::Column::Amount.is_not_null())
+            .order_by_asc(steps::Column::RecipeId)
+            .into_model::<RecipeIdAndCalories>()
+            .all(&self.conn)
+            .await?;
+
+        let unit_ids = calories.iter().filter_map(|row| row.unit_id).collect_vec();
+
+        let units = ingredient_units::Entity::find()
+            .filter(ingredient_units::Column::Id.is_in(unit_ids))
+            .all(&self.conn)
+            .await?;
+
+        let map: HashMap<CaloriesId, CaloriesResult> = calories
+            .into_iter()
+            .group_by(|step| step.recipe_id)
+            .into_iter()
+            .map(|(key, group)| {
+                let calories = group.into_iter().fold(
+                    CaloriesResult {
+                        carbs: 0.0,
+                        fats: 0.0,
+                        proteins: 0.0,
+                        alcohol: 0.0,
+                        calories: 0.0,
+                    },
+                    |mut acc, row| {
+                        let unit = if let Some(unit_id) = row.unit_id {
+                            units.iter().find(|unit| unit.id == unit_id)
+                        } else {
+                            None
+                        };
+
+                        let amount = row.amount.unwrap();
+                        let grams = unit.map(|unit| unit.base_value * amount).unwrap_or(amount) / 100.0;
+
+                        acc.carbs += row.carbs * grams;
+                        acc.fats += row.fat * grams;
+                        acc.proteins += row.proteins * grams;
+                        acc.alcohol += row.alc * grams;
+                        acc.calories = acc.carbs * 4.1 + acc.fats * 9.3 + acc.proteins * 4.1 + acc.alcohol * 7.1;
+
+                        acc
+                    },
+                );
+
+                (CaloriesId(key), calories)
             })
             .collect();
 
