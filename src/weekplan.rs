@@ -41,6 +41,7 @@ pub async fn create_weekplan_for_week(
     week: NaiveDate,
     user: User,
     tags: Vec<String>,
+    portions: i32,
     db: &DatabaseConnection,
 ) -> Result<Vec<Weekplan::Model>, DbErr> {
     let week_start = beginning_of_week(&week);
@@ -73,7 +74,7 @@ pub async fn create_weekplan_for_week(
                             date: Set(date),
                             user_id: Set(user.id),
                             recipe_id: Set(recipe.id),
-                            portions: Set(2),
+                            portions: Set(portions),
                             inserted_at: Set(now),
                             updated_at: Set(now),
                             ..Default::default()

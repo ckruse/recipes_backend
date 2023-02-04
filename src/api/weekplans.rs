@@ -31,7 +31,13 @@ impl WeekplansQueries {
 
 #[Object]
 impl WeekplansMutations {
-    async fn create_weekplan(&self, ctx: &Context<'_>, week: NaiveDate, tags: Vec<String>) -> Result<Vec<Weekplan>> {
+    async fn create_weekplan(
+        &self,
+        ctx: &Context<'_>,
+        week: NaiveDate,
+        tags: Vec<String>,
+        portions: Option<i32>,
+    ) -> Result<Vec<Weekplan>> {
         let user = ctx.data_opt::<entity::users::Model>();
         let db = ctx.data::<DatabaseConnection>()?;
 
@@ -40,7 +46,7 @@ impl WeekplansMutations {
         // due to policy check user is always Some
         let user = user.unwrap();
 
-        crate::weekplan::create_weekplan_for_week(week, user.to_owned(), tags, db)
+        crate::weekplan::create_weekplan_for_week(week, user.to_owned(), tags, portions.unwrap_or(2), db)
             .await
             .map_err(|e| e.into())
     }
