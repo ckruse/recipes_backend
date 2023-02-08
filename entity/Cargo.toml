@@ -13,7 +13,7 @@ version = "5.0"
 features = ["chrono", "log", "dataloader"]
 
 [dependencies.sea-orm]
-version = "^0.10"
+version = "^0.11"
 features = [
   "debug-print",
   "runtime-actix-native-tls",
