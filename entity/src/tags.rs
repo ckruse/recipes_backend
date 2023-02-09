@@ -72,7 +72,7 @@ impl Loader<i64> for TagsLoader {
         let ids = keys.to_vec();
 
         let counts = super::recipes_tags::Entity::find()
-            .filter(super::recipes_tags::Column::RecipeId.is_in(ids))
+            .filter(super::recipes_tags::Column::TagId.is_in(ids))
             .select_only()
             .column(super::recipes_tags::Column::TagId)
             .column_as(Expr::col(super::recipes_tags::Column::RecipeId).count(), "cnt")
