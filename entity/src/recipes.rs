@@ -136,11 +136,12 @@ impl Model {
 
     async fn image(&self, _ctx: &Context<'_>) -> Option<RecipeImage> {
         let ext = get_extension_from_filename(self.image.as_ref()?).or(Some("jpg"))?;
+        let updated = self.updated_at.timestamp();
 
         self.image.as_ref().map(|_| RecipeImage {
-            thumb: format!("/pictures/{}/thumbnail.{}", self.id, ext),
-            large: format!("/pictures/{}/large.{}", self.id, ext),
-            original: format!("/pictures/{}/original.{}", self.id, ext),
+            thumb: format!("/pictures/{}/thumbnail.{}?{}", self.id, ext, updated),
+            large: format!("/pictures/{}/large.{}?{}", self.id, ext, updated),
+            original: format!("/pictures/{}/original.{}?{}", self.id, ext, updated),
         })
     }
 
