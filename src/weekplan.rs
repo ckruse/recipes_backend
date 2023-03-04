@@ -178,3 +178,22 @@ pub async fn replace_weekplan_recipe(
 
     Ok(weekplan)
 }
+
+pub async fn replace_weekplan_recipe_with_recipe(
+    weekplan: Weekplan::Model,
+    recipe_id: i64,
+    db: &DatabaseConnection,
+) -> Result<Weekplan::Model, DbErr> {
+    let now = chrono::Utc::now().naive_utc();
+
+    let weekplan = Weekplan::ActiveModel {
+        id: Unchanged(weekplan.id),
+        recipe_id: Set(recipe_id),
+        updated_at: Set(now),
+        ..Default::default()
+    }
+    .update(db)
+    .await?;
+
+    Ok(weekplan)
+}
