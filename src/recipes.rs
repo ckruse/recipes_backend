@@ -28,6 +28,7 @@ pub async fn list_recipes(
 
     if let Some(search) = search {
         let mut cond = Condition::all();
+        let mut subquery_cond = Condition::all();
 
         for s in search {
             cond = cond.add(
@@ -37,9 +38,48 @@ pub async fn list_recipes(
                 ))))
                 .like(format!("%{}%", s)),
             );
+
+            subquery_cond = subquery_cond.add(
+                Expr::expr(Func::lower(Expr::col((
+                    entity::ingredients::Entity,
+                    entity::ingredients::Column::Name,
+                ))))
+                .like(format!("%{}%", s)),
+            );
         }
 
-        query = query.filter(cond);
+        let subquery = Query::select()
+            .column(entity::steps::Column::RecipeId)
+            .from(entity::steps::Entity)
+            .join(
+                JoinType::InnerJoin,
+                entity::steps_ingredients::Entity,
+                Condition::all().add(
+                    Expr::col((
+                        entity::steps_ingredients::Entity,
+                        entity::steps_ingredients::Column::StepId,
+                    ))
+                    .eq(Expr::col((entity::steps::Entity, entity::steps::Column::Id))),
+                ),
+            )
+            .join(
+                JoinType::InnerJoin,
+                entity::ingredients::Entity,
+                Condition::all().add(
+                    Expr::col((entity::ingredients::Entity, entity::ingredients::Column::Id)).eq(Expr::col((
+                        entity::steps_ingredients::Entity,
+                        entity::steps_ingredients::Column::IngredientId,
+                    ))),
+                ),
+            )
+            .cond_where(subquery_cond)
+            .to_owned();
+
+        query = query.filter(
+            Condition::any()
+                .add(Expr::col((entity::recipes::Entity, entity::recipes::Column::Id)).in_subquery(subquery))
+                .add(cond),
+        );
     }
 
     if let Some(tags) = tags {
@@ -79,6 +119,7 @@ pub async fn count_recipes(
 
     if let Some(search) = search {
         let mut cond = Condition::all();
+        let mut subquery_cond = Condition::all();
 
         for s in search {
             cond = cond.add(
@@ -88,9 +129,48 @@ pub async fn count_recipes(
                 ))))
                 .like(format!("%{}%", s)),
             );
+
+            subquery_cond = subquery_cond.add(
+                Expr::expr(Func::lower(Expr::col((
+                    entity::ingredients::Entity,
+                    entity::ingredients::Column::Name,
+                ))))
+                .like(format!("%{}%", s)),
+            );
         }
 
-        query = query.filter(cond);
+        let subquery = Query::select()
+            .column(entity::steps::Column::RecipeId)
+            .from(entity::steps::Entity)
+            .join(
+                JoinType::InnerJoin,
+                entity::steps_ingredients::Entity,
+                Condition::all().add(
+                    Expr::col((
+                        entity::steps_ingredients::Entity,
+                        entity::steps_ingredients::Column::StepId,
+                    ))
+                    .eq(Expr::col((entity::steps::Entity, entity::steps::Column::Id))),
+                ),
+            )
+            .join(
+                JoinType::InnerJoin,
+                entity::ingredients::Entity,
+                Condition::all().add(
+                    Expr::col((entity::ingredients::Entity, entity::ingredients::Column::Id)).eq(Expr::col((
+                        entity::steps_ingredients::Entity,
+                        entity::steps_ingredients::Column::IngredientId,
+                    ))),
+                ),
+            )
+            .cond_where(subquery_cond)
+            .to_owned();
+
+        query = query.filter(
+            Condition::any()
+                .add(Expr::col((entity::recipes::Entity, entity::recipes::Column::Id)).in_subquery(subquery))
+                .add(cond),
+        );
     }
 
     if let Some(tags) = tags {
