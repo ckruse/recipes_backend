@@ -16,7 +16,7 @@ dotenv = "0.15"
 env_logger = "0.10"
 async-graphql-actix-web = "5.0"
 jsonwebtoken = "8.2"
-argon2 = { version = "0.4", features = ["password-hash"] }
+argon2 = { version = "0.5", features = ["password-hash"] }
 rand_core = { version = "0.6", features = ["std"] }
 anyhow = "1.0"
 actix-cors = "0.6"
