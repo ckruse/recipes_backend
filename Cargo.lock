@@ -2676,7 +2676,7 @@ dependencies = [
 
 [[package]]
 name = "recipes"
-version = "0.1.34"
+version = "0.2.0"
 dependencies = [
  "actix-cors",
  "actix-files",
