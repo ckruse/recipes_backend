@@ -1,17 +1,16 @@
 use std::collections::HashMap;
 
-use actix_web::{
-    error, get,
-    web::{self, Query},
-    Error, HttpResponse, Result,
-};
-use chrono::NaiveDate;
+use actix_web::web;
+use actix_web::web::Query;
+use actix_web::{error, get, Error, HttpResponse, Result};
+use chrono::{Datelike, NaiveDate};
 use entity::ingredient_units;
 use entity::ingredients;
 use entity::steps;
 use entity::steps_ingredients;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
 use serde::Deserialize;
+use serde_qs::actix::QsQuery;
 
 use crate::{recipes, users, weekplan};
 
@@ -174,15 +173,16 @@ fn calc_amount(amount: f64, portions: f64, unit: &Option<ingredient_units::Model
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct WeekplanQuery {
     pub week: NaiveDate,
+    pub days: Option<Vec<u32>>,
 }
 
 #[get("/weekplan/{user_id}/bring.json")]
 pub async fn get_weekplan_bring(
     user_id: web::Path<i64>,
-    params: Query<WeekplanQuery>,
+    params: QsQuery<WeekplanQuery>,
     db: web::Data<DatabaseConnection>,
 ) -> Result<HttpResponse, Error> {
     let db = db.get_ref();
@@ -195,9 +195,20 @@ pub async fn get_weekplan_bring(
 
     let user = user.unwrap();
 
-    let weekplans = weekplan::list_weekplan(&params.week, &user, db)
+    let mut weekplans = weekplan::list_weekplan(&params.week, &user, db)
         .await
         .map_err(error::ErrorInternalServerError)?;
+
+    dbg!(&params);
+
+    if let Some(days) = &params.days {
+        weekplans = weekplans
+            .into_iter()
+            .filter(|wp| days.contains(&wp.date.weekday().num_days_from_monday()))
+            .collect::<Vec<entity::weekplans::Model>>();
+    }
+
+    dbg!(&weekplans);
 
     let recipe_ids = weekplans.iter().map(|r| r.recipe_id).collect::<Vec<i64>>();
     let step_ingredients = entity::steps::Entity::find()

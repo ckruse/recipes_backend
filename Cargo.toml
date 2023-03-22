@@ -21,6 +21,7 @@ rand_core = { version = "0.6", features = ["std"] }
 anyhow = "1.0"
 actix-cors = "0.6"
 log = "0.4"
+serde_qs = { version = "0.12", features = ["actix4"] }
 
 # picture handling
 tokio = "1.26"
