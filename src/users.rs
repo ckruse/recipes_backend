@@ -8,6 +8,7 @@ use entity::users::{self, Role};
 use image::imageops;
 use rand_core::OsRng;
 use sea_orm::entity::prelude::*;
+use sea_orm::sea_query::{Expr, Func};
 use sea_orm::ActiveValue::{Set, Unchanged};
 use sea_orm::{DatabaseConnection, Order, QueryOrder, QuerySelect, TransactionTrait};
 
@@ -27,11 +28,15 @@ pub struct UserInput {
 }
 
 pub async fn get_user_by_email(email: String, db: &DatabaseConnection) -> Option<users::Model> {
-    match users::Entity::find()
-        .filter(users::Column::Email.eq(email))
+    let result = users::Entity::find()
+        // .filter(users::Column::Email.eq(email))
+        .filter(
+            Expr::expr(Func::lower(Expr::col((users::Entity, users::Column::Email)))).eq(Func::lower(Expr::val(email))),
+        )
         .one(db)
-        .await
-    {
+        .await;
+
+    match result {
         Ok(user) => user,
         _ => None,
     }
