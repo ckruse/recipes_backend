@@ -11,15 +11,15 @@ impl Authorization<DefaultActions, WeekplanModel> for WeekplanPolicy {
         &self,
         action: DefaultActions,
         user: Option<&UserModel>,
-        _resource: Option<&WeekplanModel>,
+        resource: Option<&WeekplanModel>,
         _db: &DatabaseConnection,
     ) -> bool {
         match action {
             DefaultActions::List => user.is_some(),
             DefaultActions::Create => user.is_some(),
-            DefaultActions::Get => user.is_some(),
-            DefaultActions::Update => user.is_some(),
-            DefaultActions::Delete => user.is_some(),
+            DefaultActions::Get => user.is_some() && resource.is_some(),
+            DefaultActions::Update => user.is_some() && resource.is_some(),
+            DefaultActions::Delete => user.is_some() && resource.is_some(),
         }
     }
 }
