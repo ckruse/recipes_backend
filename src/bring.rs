@@ -199,8 +199,6 @@ pub async fn get_weekplan_bring(
         .await
         .map_err(error::ErrorInternalServerError)?;
 
-    dbg!(&params);
-
     if let Some(days) = &params.days {
         weekplans = weekplans
             .into_iter()
