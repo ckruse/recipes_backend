@@ -62,35 +62,38 @@ pub async fn create_weekplan_for_week(
                 .all(txn)
                 .await?;
 
-            if weekplan.is_empty() {
-                let mut date = week_start;
-                let days = days.unwrap_or(vec![]);
-                let q = get_random_recipe(user.id, week_start, week_stop, tags);
+            let mut date = week_start;
+            let days = days.unwrap_or(vec![]);
+            let q = get_random_recipe(user.id, week_start, week_stop, tags);
 
-                while date <= week_stop {
-                    if !days.contains(&date.weekday().num_days_from_monday()) {
-                        date += chrono::Duration::days(1);
-                        continue;
-                    }
-
-                    let recipe = q.clone().one(txn).await?;
-
-                    if let Some(recipe) = recipe {
-                        Weekplan::ActiveModel {
-                            date: Set(date),
-                            user_id: Set(user.id),
-                            recipe_id: Set(recipe.id),
-                            portions: Set(portions),
-                            inserted_at: Set(now),
-                            updated_at: Set(now),
-                            ..Default::default()
-                        }
-                        .insert(txn)
-                        .await?;
-                    }
-
+            while date <= week_stop {
+                if weekplan.iter().any(|w| w.date == date) {
                     date += chrono::Duration::days(1);
+                    continue;
                 }
+
+                if !days.contains(&date.weekday().num_days_from_monday()) {
+                    date += chrono::Duration::days(1);
+                    continue;
+                }
+
+                let recipe = q.clone().one(txn).await?;
+
+                if let Some(recipe) = recipe {
+                    Weekplan::ActiveModel {
+                        date: Set(date),
+                        user_id: Set(user.id),
+                        recipe_id: Set(recipe.id),
+                        portions: Set(portions),
+                        inserted_at: Set(now),
+                        updated_at: Set(now),
+                        ..Default::default()
+                    }
+                    .insert(txn)
+                    .await?;
+                }
+
+                date += chrono::Duration::days(1);
             }
 
             Weekplan::Entity::find()
