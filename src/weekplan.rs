@@ -63,7 +63,7 @@ pub async fn create_weekplan_for_week(
                 .await?;
 
             let mut date = week_start;
-            let days = days.unwrap_or(vec![]);
+            let days = days.unwrap_or(vec![1, 2, 3, 4, 5, 6, 7]);
             let q = get_random_recipe(user.id, week_start, week_stop, tags);
 
             while date <= week_stop {
