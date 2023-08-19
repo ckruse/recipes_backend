@@ -164,10 +164,10 @@ fn calc_amount(amount: f64, portions: f64, unit: &Option<ingredient_units::Model
         if let Some(unit) = &unit {
             let grams = amount * portions * unit.base_value;
 
-            return format!("{:.2} {} ({:.2}g)", amount, unit_to_str(&unit.identifier), grams);
+            return format!("{:.2} {} ({:.0}g)", amount, unit_to_str(&unit.identifier), grams);
         }
 
-        format!("{:.2}g", amount)
+        format!("{:.0}g", amount)
     } else {
         "".to_owned()
     }
@@ -302,10 +302,10 @@ fn amount_str(amount: f64, unit: &Option<ingredient_units::Model>) -> String {
     if amount > 0.0 {
         if let Some(unit) = &unit {
             let grams = amount * unit.base_value;
-            return format!("{:.2} {} ({:.2}g)", amount, unit_to_str(&unit.identifier), grams);
+            return format!("{:.2} {} ({:.0}g)", amount, unit_to_str(&unit.identifier), grams);
         }
 
-        format!("{:.2}g", amount)
+        format!("{:.0}g", amount)
     } else {
         "".to_owned()
     }
