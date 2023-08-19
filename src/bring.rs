@@ -206,8 +206,6 @@ pub async fn get_weekplan_bring(
             .collect::<Vec<entity::weekplans::Model>>();
     }
 
-    dbg!(&weekplans);
-
     let recipe_ids = weekplans.iter().map(|r| r.recipe_id).collect::<Vec<i64>>();
     let step_ingredients = entity::steps::Entity::find()
         .filter(entity::steps::Column::RecipeId.is_in(recipe_ids))
