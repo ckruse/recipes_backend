@@ -584,9 +584,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-actix-web"
-version = "6.0.3"
+version = "6.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6647b08223702df53cf502a98ddef26654b9468f0de9da31f61de03210421de2"
+checksum = "b98458d4fbb7f52f8bc05393e1a608f510ad8f562284b982b795f881d5babf0e"
 dependencies = [
  "actix",
  "actix-http",
@@ -594,6 +594,7 @@ dependencies = [
  "actix-web-actors",
  "async-channel",
  "async-graphql",
+ "async-stream",
  "futures-channel",
  "futures-util",
  "serde_json",
