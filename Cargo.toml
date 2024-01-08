@@ -14,7 +14,7 @@ migration = { path = "migration" }
 actix-web = "4.4"
 dotenv = "0.15"
 env_logger = "0.10"
-async-graphql-actix-web = "6.0"
+async-graphql-actix-web = "7.0"
 jsonwebtoken = "9.2"
 argon2 = { version = "0.5", features = ["password-hash"] }
 rand_core = { version = "0.6", features = ["std"] }
