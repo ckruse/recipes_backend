@@ -93,9 +93,9 @@ dependencies = [
 
 [[package]]
 name = "actix-http"
-version = "3.5.1"
+version = "3.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "129d4c88e98860e1758c5de288d1632b07970a16d59bdf7b8d66053d582bb71f"
+checksum = "d223b13fd481fc0d1f83bb12659ae774d9e3601814c68a0bc539731698cca743"
 dependencies = [
  "actix-codec",
  "actix-rt",
@@ -204,9 +204,9 @@ dependencies = [
 
 [[package]]
 name = "actix-web"
-version = "4.4.1"
+version = "4.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e43428f3bf11dee6d166b00ec2df4e3aa8cc1606aaa0b7433c146852e2f4e03b"
+checksum = "43a6556ddebb638c2358714d853257ed226ece6023ef9364f23f0c70737ea984"
 dependencies = [
  "actix-codec",
  "actix-http",
@@ -558,7 +558,7 @@ dependencies = [
  "futures-util",
  "handlebars",
  "http 1.0.0",
- "indexmap 2.0.0",
+ "indexmap",
  "log",
  "lru",
  "mime",
@@ -630,7 +630,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cf4d4e86208f4f9b81a503943c07e6e7f29ad3505e6c9ce6431fe64dc241681"
 dependencies = [
  "bytes",
- "indexmap 2.0.0",
+ "indexmap",
  "serde",
  "serde_json",
 ]
@@ -1738,9 +1738,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.20"
+version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97ec8491ebaf99c8eaa73058b045fe58073cd6be7f596ac993ced0b0a0c01049"
+checksum = "bb2c4422095b67ee78da96fbb51a4cc413b3b25883c7717ff7ca1ab31022c9c9"
 dependencies = [
  "bytes",
  "fnv",
@@ -1748,7 +1748,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http 0.2.9",
- "indexmap 1.9.3",
+ "indexmap",
  "slab",
  "tokio",
  "tokio-util",
@@ -1964,16 +1964,6 @@ dependencies = [
  "png",
  "qoi",
  "tiff",
-]
-
-[[package]]
-name = "indexmap"
-version = "1.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
-dependencies = [
- "autocfg",
- "hashbrown 0.12.3",
 ]
 
 [[package]]
@@ -3579,7 +3569,7 @@ dependencies = [
  "futures-util",
  "hashlink",
  "hex",
- "indexmap 2.0.0",
+ "indexmap",
  "log",
  "memchr",
  "native-tls",
@@ -4011,7 +4001,7 @@ version = "0.19.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8123f27e969974a3dfba720fdb560be359f57b44302d280ba72e76a74480e8a"
 dependencies = [
- "indexmap 2.0.0",
+ "indexmap",
  "toml_datetime",
  "winnow",
 ]
