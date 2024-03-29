@@ -24,7 +24,7 @@ log = "0.4"
 serde_qs = { version = "0.12", features = ["actix4"] }
 
 # picture handling
-tokio = "1.36"
+tokio = "1.37"
 image = "0.25"
 kamadak-exif = "0.5"
 actix-files = "0.6"
