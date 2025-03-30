@@ -8,8 +8,12 @@ edition = "2021"
 [dependencies]
 itertools = "0.13"
 
+async-graphql-derive = "6.0"
+async-graphql-parser = "6.0"
+async-graphql-value = "6.0"
+
 [dependencies.async-graphql]
-version = "7.0"
+version = "6.0"
 features = ["chrono", "log", "dataloader"]
 
 [dependencies.sea-orm]

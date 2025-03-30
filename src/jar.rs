@@ -1,6 +1,6 @@
 use std::env;
 
-use cookie::{time::Duration, Cookie, CookieJar, Key};
+use cookie::{Cookie, CookieJar, Key, time::Duration};
 use entity::users::Model as User;
 
 pub fn get_auth_cookie(user: &User) -> String {

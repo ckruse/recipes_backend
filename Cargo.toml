@@ -1,6 +1,6 @@
 [package]
 name = "recipes"
-version = "0.2.5"
+version = "0.2.6"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -14,7 +14,10 @@ migration = { path = "migration" }
 actix-web = "4.10"
 dotenv = "0.15"
 env_logger = "0.10"
-async-graphql-actix-web = "7.0"
+async-graphql-actix-web = "6.0"
+async-graphql-derive = "6.0"
+async-graphql-parser = "6.0"
+async-graphql-value = "6.0"
 jsonwebtoken = "9.3"
 argon2 = { version = "0.5", features = ["password-hash"] }
 rand_core = { version = "0.6", features = ["std"] }
@@ -30,7 +33,7 @@ kamadak-exif = "0.5"
 actix-files = "0.6"
 
 [dependencies.async-graphql]
-version = "7.0"
+version = "6.0"
 features = ["chrono", "log", "dataloader"]
 
 [dependencies.sea-orm]
@@ -51,5 +54,5 @@ version = "0.4"
 features = ["std", "serde"]
 
 [dependencies.cookie]
-version = "0.18.1"
+version = "0.16.2"
 features = ["secure", "percent-encode"]

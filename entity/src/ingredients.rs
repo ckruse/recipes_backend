@@ -5,13 +5,13 @@ use std::sync::Arc;
 use async_graphql::dataloader::*;
 use async_graphql::*;
 use itertools::Itertools;
-use sea_orm::{entity::prelude::*, QueryOrder};
+use sea_orm::{QueryOrder, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 
 use crate::ingredient_units;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, Enum)]
-#[sea_orm(rs_type = "String", db_type = "String(Some(2))")]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(2))")]
 pub enum Reference {
     #[sea_orm(string_value = "g")]
     G,

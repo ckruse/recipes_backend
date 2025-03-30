@@ -7,7 +7,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, Enum)]
-#[sea_orm(rs_type = "String", db_type = "String(Some(4))")]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(4))")]
 pub enum Role {
     #[sea_orm(string_value = "root")]
     Root,

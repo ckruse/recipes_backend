@@ -5,7 +5,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, Enum)]
-#[sea_orm(rs_type = "String", db_type = "String(Some(2))")]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(2))")]
 pub enum Units {
     #[sea_orm(string_value = "pcs")]
     PCS,
