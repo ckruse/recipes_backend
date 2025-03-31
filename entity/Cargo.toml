@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-itertools = "0.13"
+itertools = "0.14"
 
 async-graphql-derive = "6.0"
 async-graphql-parser = "6.0"
