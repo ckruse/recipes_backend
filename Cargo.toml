@@ -16,7 +16,7 @@ dotenv = "0.15"
 env_logger = "0.10"
 async-graphql-actix-web = "6.0"
 async-graphql-derive = "6.0"
-async-graphql-parser = "6.0"
+async-graphql-parser = "7.0"
 async-graphql-value = "6.0"
 jsonwebtoken = "9.3"
 argon2 = { version = "0.5", features = ["password-hash"] }
