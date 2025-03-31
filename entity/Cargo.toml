@@ -9,7 +9,7 @@ edition = "2021"
 itertools = "0.13"
 
 async-graphql-derive = "6.0"
-async-graphql-parser = "6.0"
+async-graphql-parser = "7.0"
 async-graphql-value = "6.0"
 
 [dependencies.async-graphql]
