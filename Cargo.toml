@@ -16,7 +16,7 @@ dotenv = "0.15"
 env_logger = "0.11"
 jsonwebtoken = "9.3"
 argon2 = { version = "0.5", features = ["password-hash"] }
-rand_core = { version = "0.6", features = ["std"] }
+rand_core = { version = "0.9", features = ["std"] }
 anyhow = "1.0"
 actix-cors = "0.7"
 log = "0.4"

@@ -3267,7 +3267,7 @@ dependencies = [
  "kamadak-exif",
  "log",
  "migration",
- "rand_core 0.6.4",
+ "rand_core 0.9.3",
  "sea-orm",
  "serde",
  "serde_qs",
