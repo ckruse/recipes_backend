@@ -1,7 +1,7 @@
 use async_graphql::*;
 use chrono::Utc;
-use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::{Set, Unchanged};
+use sea_orm::entity::prelude::*;
 use sea_orm::{DatabaseConnection, DbErr, QueryOrder, QuerySelect};
 
 pub async fn list_tags(
@@ -21,7 +21,7 @@ pub async fn list_tags(
     }
 
     if let Some(search) = search {
-        q = q.filter(entity::tags::Column::Name.like(&format!("%{}%", search)));
+        q = q.filter(entity::tags::Column::Name.like(format!("%{search}%")));
     }
 
     q.order_by_asc(entity::tags::Column::Name).all(db).await
@@ -31,7 +31,7 @@ pub async fn count_tags(search: Option<String>, db: &DatabaseConnection) -> Resu
     let mut q = entity::tags::Entity::find();
 
     if let Some(search) = search {
-        q = q.filter(entity::tags::Column::Name.like(&format!("%{}%", search)));
+        q = q.filter(entity::tags::Column::Name.like(format!("%{search}%")));
     }
 
     q.count(db).await

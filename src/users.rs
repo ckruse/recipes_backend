@@ -28,25 +28,18 @@ pub struct UserInput {
 }
 
 pub async fn get_user_by_email(email: String, db: &DatabaseConnection) -> Option<users::Model> {
-    let result = users::Entity::find()
+    users::Entity::find()
         // .filter(users::Column::Email.eq(email))
         .filter(
             Expr::expr(Func::lower(Expr::col((users::Entity, users::Column::Email)))).eq(Func::lower(Expr::val(email))),
         )
         .one(db)
-        .await;
-
-    match result {
-        Ok(user) => user,
-        _ => None,
-    }
+        .await
+        .unwrap_or_default()
 }
 
 pub async fn get_user_by_id(id: i64, db: &DatabaseConnection) -> Option<users::Model> {
-    match users::Entity::find_by_id(id).one(db).await {
-        Ok(user) => user,
-        _ => None,
-    }
+    users::Entity::find_by_id(id).one(db).await.unwrap_or_default()
 }
 
 pub async fn authenticate_user(email: String, password: String, db: &DatabaseConnection) -> Option<users::Model> {
@@ -84,7 +77,7 @@ pub async fn list_users(
     let mut query = users::Entity::find();
 
     if let Some(search) = search {
-        query = query.filter(users::Column::Email.like(&format!("%{}%", search)));
+        query = query.filter(users::Column::Email.like(format!("%{search}%")));
     }
 
     query
@@ -99,7 +92,7 @@ pub async fn count_users(search: Option<String>, db: &DatabaseConnection) -> Res
     let mut query = users::Entity::find();
 
     if let Some(search) = search {
-        query = query.filter(users::Column::Email.like(&format!("%{}%", search)));
+        query = query.filter(users::Column::Email.like(format!("%{search}%")));
     }
 
     query.count(db).await

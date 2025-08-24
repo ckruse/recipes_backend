@@ -36,27 +36,27 @@ pub fn create_schema(db: DatabaseConnection) -> RecipesSchema {
     Schema::build(QueryRoot::default(), MutationRoot::default(), EmptySubscription)
         .data(DataLoader::new(
             entity::recipes::RecipesLoader { conn: db.clone() },
-            actix_web::rt::spawn,
+            tokio::spawn,
         ))
         .data(DataLoader::new(
             entity::steps::StepsLoader { conn: db.clone() },
-            actix_web::rt::spawn,
+            tokio::spawn,
         ))
         .data(DataLoader::new(
             entity::steps_ingredients::StepIngredientLoader { conn: db.clone() },
-            actix_web::rt::spawn,
+            tokio::spawn,
         ))
         .data(DataLoader::new(
             entity::ingredients::IngredientLoader { conn: db.clone() },
-            actix_web::rt::spawn,
+            tokio::spawn,
         ))
         .data(DataLoader::new(
             entity::tags::TagsLoader { conn: db.clone() },
-            actix_web::rt::spawn,
+            tokio::spawn,
         ))
         .data(DataLoader::new(
             entity::weekplans::WeekplanLoader { conn: db.clone() },
-            actix_web::rt::spawn,
+            tokio::spawn,
         ))
         .extension(Logger)
         .data(db)

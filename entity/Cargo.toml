@@ -16,7 +16,7 @@ features = ["chrono", "log", "dataloader"]
 version = "^1.1"
 features = [
   "debug-print",
-  "runtime-actix-native-tls",
+  "runtime-tokio-native-tls",
   "sqlx-postgres",
   "with-chrono",
 ]

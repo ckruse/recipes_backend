@@ -1,101 +1,87 @@
 use std::env;
 
-use actix_web::middleware::Logger;
-use actix_web::web::Data;
-use actix_web::{App, HttpRequest, HttpResponse, HttpServer, Result, guard, web};
 use async_graphql::http::GraphiQLSource;
-use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
-use cookie::{CookieJar, Key};
-#[cfg(debug_assertions)]
-use dotenv::dotenv;
+use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use axum::extract::State;
+use axum::response::{Html, IntoResponse};
+use axum::routing::get;
+use axum::{Extension, Router};
+use entity::users::Model as User;
+use jwt_simple::prelude::*;
 use migration::{Migrator, MigratorTrait};
-use sea_orm::DatabaseConnection;
+use tokio::net::TcpListener;
+use tower_http::services::ServeDir;
+
+use crate::types::AppState;
 
 mod api;
 mod authorization;
 mod bring;
+mod current_user;
 mod ingredients;
-mod jar;
 mod recipes;
 mod steps;
 mod tags;
+mod types;
 mod users;
 mod utils;
 mod weekplan;
 
 async fn index(
-    schema: web::Data<api::RecipesSchema>,
+    Extension(schema): Extension<api::RecipesSchema>,
+    Extension(user): Extension<Option<User>>,
+    State(state): State<AppState>,
     req: GraphQLRequest,
-    http_req: HttpRequest,
-    db: web::Data<DatabaseConnection>,
 ) -> GraphQLResponse {
-    if let Some(token) = http_req.cookie("recipes_auth") {
-        let master_key = env::var("COOKIE_KEY").expect("env variable COOKIE_KEY not set");
-        let key = Key::derive_from(master_key.as_bytes());
-        let jar = CookieJar::new();
-        let priv_jar = jar.private(&key);
-
-        if let Some(value) = priv_jar.decrypt(token) {
-            if let Some(user) = users::get_user_by_id(value.value().parse().unwrap(), &db).await {
-                return schema.execute(req.into_inner().data(user)).await.into();
-            }
-        }
-    }
-
-    schema.execute(req.into_inner()).await.into()
+    schema.execute(req.into_inner().data(state).data(user)).await.into()
 }
 
-async fn index_graphiql() -> Result<HttpResponse> {
-    Ok(HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(GraphiQLSource::build().endpoint("/graphql").finish()))
+async fn index_graphiql() -> impl IntoResponse {
+    Html(GraphiQLSource::build().endpoint("/graphql").finish())
 }
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
+#[tokio::main]
+async fn main() {
     #[cfg(debug_assertions)]
-    dotenv().ok();
+    dotenvy::dotenv().ok();
 
     env_logger::init();
 
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set");
-    let addrs = env::var("LISTEN").expect("HOST is not set");
+    let addrs = env::var("LISTEN").expect("LISTEN is not set");
+    let token_key = HS512Key::from_bytes(std::env::var("JWT_KEY").expect("JWT_KEY not set").as_bytes());
 
     let conn = sea_orm::Database::connect(&db_url)
         .await
         .expect("Failed to connect to database");
     Migrator::up(&conn, None).await.expect("migration failed");
 
+    log::info!("🚀 Listening on http://{}", addrs);
+
     let schema = api::create_schema(conn.clone());
+    let state = AppState { conn, token_key };
+    let pictures_static_path = utils::image_base_path();
+    let avatars_static_path = utils::avatar_base_path();
 
-    log::info!("Listening on http://{}", addrs);
+    let listener = TcpListener::bind(addrs).await.expect("could not create listener");
 
-    HttpServer::new(move || {
-        let cors = actix_cors::Cors::permissive();
-        let pictures_static_path = utils::image_base_path();
-        let avatars_static_path = utils::avatar_base_path();
+    let mut router = Router::new()
+        .nest_service("/pictures", ServeDir::new(pictures_static_path))
+        .nest_service("/avatars", ServeDir::new(avatars_static_path))
+        .route("/graphql", get(index).post(index_graphiql))
+        .merge(bring::routes());
 
-        App::new()
-            .app_data(Data::new(schema.clone()))
-            .app_data(Data::new(conn.clone()))
-            .wrap(cors)
-            .wrap(Logger::default())
-            .service(bring::get_recipe_bring)
-            .service(bring::get_weekplan_bring)
-            .service(web::resource("/graphql").guard(guard::Post()).to(index))
-            .service(web::resource("/graphql").guard(guard::Get()).to(index_graphiql))
-            .service(
-                actix_files::Files::new("/pictures", pictures_static_path)
-                    .show_files_listing()
-                    .use_last_modified(true),
-            )
-            .service(
-                actix_files::Files::new("/avatars", avatars_static_path)
-                    .show_files_listing()
-                    .use_last_modified(true),
-            )
-    })
-    .bind(addrs)?
-    .run()
-    .await
+    router = router
+        .layer(Extension(schema))
+        .route_layer(axum::middleware::from_fn_with_state(state.clone(), current_user::current_user));
+
+    #[cfg(debug_assertions)]
+    {
+        use tower_http::cors::{Any, CorsLayer};
+        router = router.layer(CorsLayer::new().allow_methods(Any).allow_headers(Any).allow_origin(Any));
+    }
+
+    axum::serve(listener, router.with_state(state).into_make_service())
+        .await
+        .unwrap();
 }

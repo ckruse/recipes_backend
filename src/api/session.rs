@@ -1,8 +1,8 @@
+use ::http::header::SET_COOKIE;
 use async_graphql::*;
-use sea_orm::DatabaseConnection;
+use jwt_simple::prelude::*;
 
-use crate::jar::get_auth_cookie;
-use crate::users::authenticate_user;
+use crate::{AppState, users::authenticate_user};
 
 #[derive(Default)]
 pub struct SessionMutations;
@@ -10,11 +10,20 @@ pub struct SessionMutations;
 #[Object]
 impl SessionMutations {
     async fn login(&self, ctx: &Context<'_>, email: String, password: String) -> Result<entity::users::Model> {
-        let db = ctx.data::<DatabaseConnection>()?;
+        let state = ctx.data::<AppState>()?;
 
-        if let Some(user) = authenticate_user(email, password, db).await {
-            let cookie = get_auth_cookie(&user);
-            ctx.insert_http_header(::http::header::SET_COOKIE, cookie);
+        if let Some(user) = authenticate_user(email, password, &state.conn).await {
+            let claims = Claims::create(Duration::from_days(30))
+                .with_issuer("Recipes")
+                .with_subject(user.id.to_string());
+
+            let token = state.token_key.authenticate(claims)?;
+
+            #[cfg(not(debug_assertions))]
+            ctx.append_http_header(SET_COOKIE, format!("recipes_auth={token}; Path=/; HttpOnly; Secure"));
+
+            #[cfg(debug_assertions)]
+            ctx.append_http_header(SET_COOKIE, format!("recipes_auth={token}; Path=/; HttpOnly"));
 
             Ok(user)
         } else {
@@ -23,9 +32,19 @@ impl SessionMutations {
     }
 
     async fn refresh(&self, ctx: &Context<'_>) -> Result<entity::users::Model> {
-        if let Some(user) = ctx.data_opt::<entity::users::Model>() {
-            let cookie = get_auth_cookie(user);
-            ctx.insert_http_header(::http::header::SET_COOKIE, cookie);
+        let state = ctx.data::<AppState>()?;
+
+        if let Some(user) = ctx.data::<Option<entity::users::Model>>()? {
+            let claims = Claims::create(Duration::from_days(30))
+                .with_issuer("Recipes")
+                .with_subject(user.id.to_string());
+            let token = state.token_key.authenticate(claims)?;
+
+            #[cfg(not(debug_assertions))]
+            ctx.append_http_header(SET_COOKIE, format!("recipes_auth={token}; Path=/; HttpOnly; Secure"));
+
+            #[cfg(debug_assertions)]
+            ctx.append_http_header(SET_COOKIE, format!("recipes_auth={token}; Path=/; HttpOnly"));
 
             Ok(user.clone())
         } else {

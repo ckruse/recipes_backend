@@ -1,18 +1,21 @@
 use std::collections::HashMap;
 
-use actix_web::web;
-use actix_web::web::Query;
-use actix_web::{error, get, Error, HttpResponse, Result};
+use axum::extract::{Path, Query, State};
+use axum::routing::get;
+use axum::{Json, Router, debug_handler};
 use chrono::{Datelike, NaiveDate};
-use entity::ingredient_units;
-use entity::ingredients;
-use entity::steps;
-use entity::steps_ingredients;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
+use entity::{ingredient_units, ingredients, steps, steps_ingredients};
+use sea_orm::{ColumnTrait, EntityTrait, ModelTrait, QueryFilter};
 use serde::Deserialize;
-use serde_qs::actix::QsQuery;
 
-use crate::{recipes, users, weekplan};
+use crate::types::HttpError;
+use crate::{AppState, recipes, users, weekplan};
+
+pub(crate) fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/recipes/{id}/bring.json", get(get_recipe_bring))
+        .route("/weekplan/{user_id}/bring.json", get(get_weekplan_bring))
+}
 
 #[derive(serde::Serialize)]
 pub struct BringItem {
@@ -40,23 +43,18 @@ struct BringInfo {
     notes: Vec<String>,
 }
 
-#[get("/recipes/{id}/bring.json")]
+#[debug_handler]
 pub async fn get_recipe_bring(
-    id: web::Path<i64>,
-    params: Query<PortionsQuery>,
-    db: web::Data<DatabaseConnection>,
-) -> Result<HttpResponse, Error> {
-    let db = db.get_ref();
+    id: Path<i64>,
+    Query(params): Query<PortionsQuery>,
+    State(state): State<AppState>,
+) -> Result<Json<BringRecipe>, HttpError> {
+    let db = &state.conn;
 
     let recipe = recipes::get_recipe_by_id(*id, db)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+        .await?
+        .ok_or_else(|| HttpError::not_found(Some("recipe not found")))?;
 
-    if recipe.is_none() {
-        return Ok(HttpResponse::NotFound().finish());
-    }
-
-    let recipe = recipe.unwrap();
     let portions = match params.portions {
         Some(portions) => {
             if portions < 0.0 {
@@ -71,16 +69,14 @@ pub async fn get_recipe_bring(
     let owner = recipe
         .find_related(entity::users::Entity)
         .one(db)
-        .await
-        .map_err(error::ErrorInternalServerError)?
-        .ok_or_else(|| error::ErrorNotFound("User not found"))?;
+        .await?
+        .ok_or_else(|| HttpError::not_found(Some("User not found")))?;
 
     let step_ingredients = recipe
         .find_related(entity::steps::Entity)
         .find_also_related(steps_ingredients::Entity)
         .all(db)
-        .await
-        .map_err(error::ErrorInternalServerError)?
+        .await?
         .into_iter()
         .flat_map(|(_step, step_ingredients)| step_ingredients)
         .collect::<Vec<steps_ingredients::Model>>();
@@ -98,14 +94,12 @@ pub async fn get_recipe_bring(
     let ingredients = entity::ingredients::Entity::find()
         .filter(entity::ingredients::Column::Id.is_in(ingredient_ids))
         .all(db)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+        .await?;
 
     let units = ingredient_units::Entity::find()
         .filter(ingredient_units::Column::Id.is_in(si_unit_ids))
         .all(db)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+        .await?;
 
     let mut all_ingredients: HashMap<i64, HashMap<i64, BringInfo>> = HashMap::new();
 
@@ -124,7 +118,7 @@ pub async fn get_recipe_bring(
             }
         }
 
-        let row = all_ingredients.entry(si.ingredient_id).or_insert_with(HashMap::new);
+        let row = all_ingredients.entry(si.ingredient_id).or_default();
         let info = row.entry(unit_key).or_insert(BringInfo {
             ingredient,
             unit,
@@ -154,7 +148,7 @@ pub async fn get_recipe_bring(
             .collect(),
     };
 
-    Ok(HttpResponse::Ok().json(desc))
+    Ok(Json(desc))
 }
 
 fn calc_amount(amount: f64, portions: f64, unit: &Option<ingredient_units::Model>) -> String {
@@ -179,25 +173,19 @@ pub struct WeekplanQuery {
     pub days: Option<Vec<u32>>,
 }
 
-#[get("/weekplan/{user_id}/bring.json")]
+#[debug_handler]
 pub async fn get_weekplan_bring(
-    user_id: web::Path<i64>,
-    params: QsQuery<WeekplanQuery>,
-    db: web::Data<DatabaseConnection>,
-) -> Result<HttpResponse, Error> {
-    let db = db.get_ref();
+    Path(user_id): Path<i64>,
+    params: Query<WeekplanQuery>,
+    State(state): State<AppState>,
+) -> Result<Json<BringRecipe>, HttpError> {
+    let db = &state.conn;
 
-    let user = users::get_user_by_id(*user_id, db).await;
-
-    if user.is_none() {
-        return Ok(HttpResponse::NotFound().finish());
-    }
-
-    let user = user.unwrap();
-
-    let mut weekplans = weekplan::list_weekplan(&params.week, &user, db)
+    let user = users::get_user_by_id(user_id, db)
         .await
-        .map_err(error::ErrorInternalServerError)?;
+        .ok_or_else(|| HttpError::not_found(Some("User not found")))?;
+
+    let mut weekplans = weekplan::list_weekplan(&params.week, &user, db).await?;
 
     if let Some(days) = &params.days {
         weekplans = weekplans
@@ -211,8 +199,7 @@ pub async fn get_weekplan_bring(
         .filter(entity::steps::Column::RecipeId.is_in(recipe_ids))
         .find_also_related(steps_ingredients::Entity)
         .all(db)
-        .await
-        .map_err(error::ErrorInternalServerError)?
+        .await?
         .into_iter()
         .filter(|(_step, step_ingredients)| step_ingredients.is_some())
         .map(|(step, step_ingredients)| (step, step_ingredients.unwrap()))
@@ -231,14 +218,12 @@ pub async fn get_weekplan_bring(
     let ingredients = entity::ingredients::Entity::find()
         .filter(entity::ingredients::Column::Id.is_in(ingredient_ids))
         .all(db)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+        .await?;
 
     let units = ingredient_units::Entity::find()
         .filter(ingredient_units::Column::Id.is_in(si_unit_ids))
         .all(db)
-        .await
-        .map_err(error::ErrorInternalServerError)?;
+        .await?;
 
     let mut all_ingredients: HashMap<i64, HashMap<i64, BringInfo>> = HashMap::new();
 
@@ -264,7 +249,7 @@ pub async fn get_weekplan_bring(
                 }
             }
 
-            let row = all_ingredients.entry(si.ingredient_id).or_insert_with(HashMap::new);
+            let row = all_ingredients.entry(si.ingredient_id).or_default();
             let info = row.entry(unit_key).or_insert(BringInfo {
                 ingredient,
                 unit,
@@ -295,7 +280,7 @@ pub async fn get_weekplan_bring(
             .collect(),
     };
 
-    Ok(HttpResponse::Ok().json(desc))
+    Ok(Json(desc))
 }
 
 fn amount_str(amount: f64, unit: &Option<ingredient_units::Model>) -> String {
