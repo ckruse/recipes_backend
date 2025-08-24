@@ -136,7 +136,7 @@ impl Model {
 
     async fn image(&self, _ctx: &Context<'_>) -> Option<RecipeImage> {
         let ext = get_extension_from_filename(self.image.as_ref()?).or(Some("jpg"))?;
-        let updated = self.updated_at.timestamp();
+        let updated = self.updated_at.and_utc().timestamp();
 
         self.image.as_ref().map(|_| RecipeImage {
             thumb: format!("/pictures/{}/thumbnail.{}?{}", self.id, ext, updated),
@@ -166,7 +166,6 @@ struct RecipeIdAndTag {
     pub updated_at: DateTime,
 }
 
-#[async_trait::async_trait]
 impl Loader<TagId> for RecipesLoader {
     type Value = Vec<tags::Model>;
     type Error = Arc<sea_orm::error::DbErr>;
@@ -185,7 +184,7 @@ impl Loader<TagId> for RecipesLoader {
 
         let map = tags
             .into_iter()
-            .group_by(|tag| tag.recipe_id)
+            .chunk_by(|tag| tag.recipe_id)
             .into_iter()
             .map(|(recipe_id, group)| {
                 let tags = group
@@ -206,7 +205,6 @@ impl Loader<TagId> for RecipesLoader {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<StepId> for RecipesLoader {
     type Value = Vec<steps::Model>;
     type Error = Arc<sea_orm::error::DbErr>;
@@ -224,7 +222,7 @@ impl Loader<StepId> for RecipesLoader {
 
         let map = steps
             .into_iter()
-            .group_by(|step| step.recipe_id)
+            .chunk_by(|step| step.recipe_id)
             .into_iter()
             .map(|(key, group)| (StepId(key), group.collect()))
             .collect();
@@ -246,7 +244,6 @@ struct RecipeIdAndRecipe {
     pub image: Option<String>,
 }
 
-#[async_trait::async_trait]
 impl Loader<FittingRecipesId> for RecipesLoader {
     type Value = Vec<Model>;
     type Error = Arc<sea_orm::error::DbErr>;
@@ -271,7 +268,7 @@ impl Loader<FittingRecipesId> for RecipesLoader {
 
         let map = fitting_recipes
             .into_iter()
-            .group_by(|recipe| recipe.recipe_id)
+            .chunk_by(|recipe| recipe.recipe_id)
             .into_iter()
             .map(|(key, group)| {
                 let recipes = group
@@ -307,7 +304,6 @@ struct RecipeIdAndCalories {
     amount: Option<f64>,
 }
 
-#[async_trait::async_trait]
 impl Loader<CaloriesId> for RecipesLoader {
     type Value = CaloriesResult;
     type Error = Arc<sea_orm::error::DbErr>;
@@ -336,7 +332,7 @@ impl Loader<CaloriesId> for RecipesLoader {
 
         let map: HashMap<CaloriesId, CaloriesResult> = calories
             .into_iter()
-            .group_by(|step| step.recipe_id)
+            .chunk_by(|step| step.recipe_id)
             .into_iter()
             .map(|(key, group)| {
                 let calories = group.into_iter().fold(

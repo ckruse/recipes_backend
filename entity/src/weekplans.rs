@@ -52,7 +52,6 @@ pub struct WeekplanLoader {
     pub conn: DatabaseConnection,
 }
 
-#[async_trait::async_trait]
 impl Loader<i64> for WeekplanLoader {
     type Value = super::recipes::Model;
     type Error = Arc<sea_orm::error::DbErr>;

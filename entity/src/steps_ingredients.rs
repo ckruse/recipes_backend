@@ -101,7 +101,6 @@ impl Model {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<UnitId> for StepIngredientLoader {
     type Value = ingredient_units::Model;
     type Error = Arc<sea_orm::error::DbErr>;
@@ -115,17 +114,12 @@ impl Loader<UnitId> for StepIngredientLoader {
             .all(&self.conn)
             .await?;
 
-        let map = units
-            .into_iter()
-            .map(|group| (UnitId(group.id), group))
-            .into_iter()
-            .collect();
+        let map = units.into_iter().map(|group| (UnitId(group.id), group)).collect();
 
         Ok(map)
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<IngredientId> for StepIngredientLoader {
     type Value = ingredients::Model;
     type Error = Arc<sea_orm::error::DbErr>;
@@ -142,7 +136,6 @@ impl Loader<IngredientId> for StepIngredientLoader {
         let map = units
             .into_iter()
             .map(|ingredient| (IngredientId(ingredient.id), ingredient))
-            .into_iter()
             .collect();
 
         Ok(map)

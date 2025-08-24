@@ -5,7 +5,7 @@ use std::sync::Arc;
 use async_graphql::dataloader::*;
 use async_graphql::*;
 use itertools::Itertools;
-use sea_orm::{entity::prelude::*, QueryOrder};
+use sea_orm::{QueryOrder, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 
 use crate::steps_ingredients;
@@ -68,7 +68,6 @@ impl Model {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<i64> for StepsLoader {
     type Value = Vec<steps_ingredients::Model>;
     type Error = Arc<sea_orm::error::DbErr>;
@@ -84,7 +83,7 @@ impl Loader<i64> for StepsLoader {
 
         let map = steps
             .into_iter()
-            .group_by(|step| step.step_id)
+            .chunk_by(|step| step.step_id)
             .into_iter()
             .map(|(key, group)| (key, group.collect()))
             .collect();

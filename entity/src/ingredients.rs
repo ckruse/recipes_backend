@@ -78,7 +78,6 @@ impl Model {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<UnitId> for IngredientLoader {
     type Value = Vec<ingredient_units::Model>;
     type Error = Arc<sea_orm::error::DbErr>;
@@ -96,7 +95,7 @@ impl Loader<UnitId> for IngredientLoader {
 
         let map = units
             .into_iter()
-            .group_by(|unit| unit.ingredient_id)
+            .chunk_by(|unit| unit.ingredient_id)
             .into_iter()
             .map(|(key, group)| (UnitId(key), group.collect()))
             .collect();

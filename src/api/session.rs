@@ -14,7 +14,7 @@ impl SessionMutations {
 
         if let Some(user) = authenticate_user(email, password, db).await {
             let cookie = get_auth_cookie(&user);
-            ctx.insert_http_header(actix_web::http::header::SET_COOKIE, cookie);
+            ctx.insert_http_header(::http::header::SET_COOKIE, cookie);
 
             Ok(user)
         } else {
@@ -25,7 +25,7 @@ impl SessionMutations {
     async fn refresh(&self, ctx: &Context<'_>) -> Result<entity::users::Model> {
         if let Some(user) = ctx.data_opt::<entity::users::Model>() {
             let cookie = get_auth_cookie(user);
-            ctx.insert_http_header(actix_web::http::header::SET_COOKIE, cookie);
+            ctx.insert_http_header(::http::header::SET_COOKIE, cookie);
 
             Ok(user.clone())
         } else {

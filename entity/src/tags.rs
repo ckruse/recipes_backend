@@ -5,9 +5,9 @@ use std::sync::Arc;
 
 use async_graphql::dataloader::*;
 use async_graphql::*;
+use sea_orm::QuerySelect;
 use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::Expr;
-use sea_orm::QuerySelect;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, SimpleObject)]
@@ -63,7 +63,6 @@ enum CntResult {
     Cnt,
 }
 
-#[async_trait::async_trait]
 impl Loader<i64> for TagsLoader {
     type Value = i64;
     type Error = Arc<sea_orm::error::DbErr>;

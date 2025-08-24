@@ -2,7 +2,7 @@ use std::env;
 
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
-use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
+use actix_web::{App, HttpRequest, HttpResponse, HttpServer, Result, guard, web};
 use async_graphql::http::GraphiQLSource;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use cookie::{CookieJar, Key};

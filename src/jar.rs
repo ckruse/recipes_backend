@@ -9,13 +9,12 @@ pub fn get_auth_cookie(user: &User) -> String {
     let mut jar = CookieJar::new();
     let mut priv_jar = jar.private_mut(&key);
 
-    let cookie = Cookie::build("recipes_auth", user.id.to_string())
+    let cookie = Cookie::build(("recipes_auth", user.id.to_string()))
         .path("/")
         .same_site(cookie::SameSite::None)
         .secure(true)
         .http_only(true)
-        .max_age(Duration::days(30))
-        .finish();
+        .max_age(Duration::days(30));
 
     priv_jar.add(cookie);
 

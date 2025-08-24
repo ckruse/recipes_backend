@@ -1,15 +1,15 @@
 use std::fs::File;
 use std::io::copy;
 
-use argon2::password_hash::{PasswordHash, PasswordVerifier, SaltString};
-use argon2::{Argon2, PasswordHasher};
+use argon2::password_hash::rand_core::OsRng;
+use argon2::password_hash::{PasswordHasher, SaltString};
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use async_graphql::*;
 use entity::users::{self, Role};
 use image::imageops;
-use rand_core::OsRng;
+use sea_orm::ActiveValue::{Set, Unchanged};
 use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::{Expr, Func};
-use sea_orm::ActiveValue::{Set, Unchanged};
 use sea_orm::{DatabaseConnection, Order, QueryOrder, QuerySelect, TransactionTrait};
 
 use crate::utils::{avatar_base_path, correct_orientation, get_extension_from_filename, get_orientation, read_exif};
