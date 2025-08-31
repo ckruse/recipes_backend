@@ -77,8 +77,16 @@ async fn main() {
 
     #[cfg(debug_assertions)]
     {
-        use tower_http::cors::{Any, CorsLayer};
-        router = router.layer(CorsLayer::new().allow_methods(Any).allow_headers(Any).allow_origin(Any));
+        use http::{Method, header};
+        use tower_http::cors::CorsLayer;
+
+        router = router.layer(
+            CorsLayer::new()
+                .allow_methods([Method::GET, Method::POST])
+                .allow_headers([header::AUTHORIZATION, header::COOKIE, header::CONTENT_TYPE])
+                .allow_origin(["http://localhost:3000".parse::<http::HeaderValue>().unwrap()])
+                .allow_credentials(true),
+        );
     }
 
     axum::serve(listener, router.with_state(state).into_make_service())
