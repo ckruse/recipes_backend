@@ -68,7 +68,7 @@ async fn main() {
     let mut router = Router::new()
         .nest_service("/pictures", ServeDir::new(pictures_static_path))
         .nest_service("/avatars", ServeDir::new(avatars_static_path))
-        .route("/graphql", get(index).post(index_graphiql))
+        .route("/graphql", get(index_graphiql).post(index))
         .merge(bring::routes());
 
     router = router
