@@ -53,7 +53,7 @@ version = "0.4"
 features = ["std", "serde"]
 
 [dependencies.axum]
-version = "0.8.7"
+version = "0.8.8"
 features = ["ws", "http2", "macros", "multipart", "json"]
 
 [dependencies.axum-extra]
