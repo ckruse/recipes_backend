@@ -57,7 +57,7 @@ version = "0.8.8"
 features = ["ws", "http2", "macros", "multipart", "json"]
 
 [dependencies.axum-extra]
-version = "0.12.2"
+version = "0.12.3"
 features = ["cookie", "cookie-private", "form", "multipart"]
 
 [dependencies.jwt-simple]
